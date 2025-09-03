@@ -17,5 +17,5 @@ Navigate to the respective folder to explore the code and documentation for each
 ## Contributions are Welcome
 Your contributions are highly welcome! Whether it's fixing a bug, adding a new example, or improving documentation, please feel free to fork the repository and submit a pull request.
 
-License
+## License
 This project is licensed under the MIT License.
