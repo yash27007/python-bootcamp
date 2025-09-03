@@ -8,7 +8,7 @@ Each topic will have its own dedicated folder containing relevant code examples,
 
 ## Topics
 
-- **Object-Oriented Programming (OOP)**: `./oops/`
+- **Object-Oriented Programming (OOP)**: [`./oops/`](./oops/)
 
 ## Getting Started
 
