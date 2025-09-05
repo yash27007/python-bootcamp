@@ -12,6 +12,7 @@ Each topic will have its own dedicated folder containing relevant code examples,
 
 - [**Object-Oriented Programming (OOP)**:](./oops/)
 - [**Advanced Python Concepts**](./advanced-concepts/)
+- [**Logging in python**](./logging/)
 
 ## Getting Started
 
