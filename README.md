@@ -11,7 +11,7 @@ Each topic will have its own dedicated folder containing relevant code examples,
 ## Topics
 
 - [**Object-Oriented Programming (OOP)**:](./oops/)
-- [**Advanced Python Concepts(Iterators and Generators)**](./advanced-concepts/)
+- [**Advanced Python Concepts**](./advanced-concepts/)
 
 ## Getting Started
 

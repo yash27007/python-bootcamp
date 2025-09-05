@@ -8,5 +8,5 @@
     ```
 - To run the file
     ```bash
-    uv run main.ipynb
+    uv run <filename>.ipynb
     ```
