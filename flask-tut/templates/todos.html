@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todo List App</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 2em; }
+        #todo-list { margin-top: 1em; }
+        .todo-item { margin-bottom: 0.5em; }
+        .completed { text-decoration: line-through; color: gray; }
+    </style>
+</head>
+<body>
+    <h1>Todo List</h1>
+    <form id="add-todo-form">
+        <input type="text" id="task" placeholder="Enter a new todo" required>
+        <button type="submit">Add Todo</button>
+    </form>
+    <ul id="todo-list"></ul>
+
+    <script>
+        // Fetch and display todos
+        function fetchTodos() {
+            fetch('/todos')
+                .then(res => res.json())
+                .then(data => {
+                    const list = document.getElementById('todo-list');
+                    list.innerHTML = '';
+                    data.forEach(todo => {
+                        const li = document.createElement('li');
+                        li.className = 'todo-item' + (todo.completed ? ' completed' : '');
+                        li.innerHTML = `
+                            <span>${todo.task}</span>
+                            <button onclick="deleteTodo(${todo.id})">Delete</button>
+                            <button onclick="toggleComplete(${todo.id}, ${todo.completed})">${todo.completed ? 'Mark Incomplete' : 'Mark Complete'}</button>
+                        `;
+                        list.appendChild(li);
+                    });
+                });
+        }
+
+        // Add a new todo
+        document.getElementById('add-todo-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const task = document.getElementById('task').value;
+            fetch('/todos', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ task })
+            })
+            .then(res => res.json())
+            .then(() => {
+                document.getElementById('task').value = '';
+                fetchTodos();
+            });
+        });
+
+        // Delete a todo
+        function deleteTodo(id) {
+            fetch(`/todos/${id}`, { method: 'DELETE' })
+                .then(() => fetchTodos());
+        }
+
+        // Toggle completion status
+        function toggleComplete(id, completed) {
+            fetch(`/todos/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ completed: !completed })
+            })
+            .then(() => fetchTodos());
+        }
+
+        // Initial fetch
+        fetchTodos();
+    </script>
+</body>
+</html>
