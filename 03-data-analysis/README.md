@@ -1,14 +1,17 @@
 # 03 – Data Analysis
 
-The tools every data scientist uses daily: NumPy for numerics, Pandas for tabular data, and Matplotlib/Seaborn for visualisation.
+The daily tools of data science: numerical computing, data manipulation, and visualisation.
 
 | # | Topic | Status | Description |
 |---|-------|--------|-------------|
-| 01 | NumPy | 🚧 Coming soon | Arrays, broadcasting, vectorised operations |
-| 02 | Pandas | 🚧 Coming soon | DataFrames, groupby, merge, time series |
-| 03 | Matplotlib | 🚧 Coming soon | Line, bar, scatter, histogram, subplots |
-| 04 | Seaborn | 🚧 Coming soon | Statistical visualisations, heatmaps, pair plots |
-| 05 | EDA (Case Study) | 🚧 Coming soon | End-to-end exploratory data analysis on a real dataset |
+| 01 | [NumPy](./01-numpy/) | 🚧 Coming soon | Arrays, vectorised operations, linear algebra |
+| 02 | [Pandas](./02-pandas/) | 🚧 Coming soon | DataFrame & Series for structured data |
+| 03 | [Data Manipulation](./03-data-manipulation/) | 🚧 Coming soon | Merging, grouping, reshaping with Pandas & NumPy |
+| 04 | [Reading Data](./04-data-reading/) | 🚧 Coming soon | CSV, Excel, JSON, SQL, and other sources |
+| 05 | [Matplotlib](./05-matplotlib/) | 🚧 Coming soon | Line charts, histograms, scatter plots |
+| 06 | [Seaborn](./06-seaborn/) | 🚧 Coming soon | Statistical visualisation: heatmaps, box plots |
+| 07 | [SQLite3](./07-sqlite/) | 🚧 Coming soon | CRUD operations with SQLite3 and Python |
+| 08 | [EDA Projects](./08-eda-projects/) | 🚧 Coming soon | Red Wine, Flight Price, Google Play Store |
 
 ## Prerequisites
 

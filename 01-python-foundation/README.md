@@ -2,14 +2,21 @@
 
 Core Python skills needed before diving into data science and machine learning.
 
-| # | Topic | Type | Description |
-|---|-------|------|-------------|
-| 01 | [OOP](./01-oops/) | Notebook | Classes, inheritance, encapsulation, polymorphism |
-| 02 | [Advanced Concepts](./02-advanced-concepts/) | Notebooks | Iterators, generators, memory management |
-| 03 | [Logging](./03-logging/) | Notebook + Scripts | Python `logging` module, handlers, formatters |
-| 04 | [Multi-threading & Multiprocessing](./04-multi-threading/) | Scripts | Threads, processes, GIL, use-cases |
-| 05 | [Flask](./05-flask/) | Scripts | REST APIs with Flask |
-| 06 | [Streamlit](./06-streamlit/) | Scripts | Interactive data apps with Streamlit |
+| # | Topic | Status | Description |
+|---|-------|--------|-------------|
+| 01 | [Basics](./01-basics/) | 🚧 Coming soon | Syntax, variables, data types, operators |
+| 02 | [Control Flow](./02-control-flow/) | 🚧 Coming soon | if/elif/else, for/while loops |
+| 03 | [Data Structures](./03-data-structures/) | 🚧 Coming soon | Lists, tuples, sets, dictionaries |
+| 04 | [Functions](./04-functions/) | 🚧 Coming soon | Functions, lambda, map, filter |
+| 05 | [Modules & Packages](./05-modules-packages/) | 🚧 Coming soon | Imports, standard library |
+| 06 | [File Handling & Exceptions](./06-file-exception/) | 🚧 Coming soon | File I/O, exception handling |
+| 07 | [OOP](./07-oops/) | ✅ Complete | Classes, inheritance, encapsulation, polymorphism |
+| 08 | [Advanced Concepts](./08-advanced-concepts/) | ✅ Complete | Iterators, generators, closures, decorators |
+| 09 | [Logging](./09-logging/) | ✅ Complete | Python `logging` module, handlers, formatters |
+| 10 | [Multi-threading & Multiprocessing](./10-multithreading/) | ✅ Complete | Threads, processes, GIL, use-cases |
+| 11 | [Memory Management](./11-memory-management/) | ✅ Complete | Allocation, deallocation, garbage collection |
+| 12 | [Flask](./12-flask/) | ✅ Complete | REST APIs with Flask |
+| 13 | [Streamlit](./13-streamlit/) | ✅ Complete | Interactive data apps with Streamlit |
 
 ## Running the Code
 

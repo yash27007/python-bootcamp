@@ -22,14 +22,14 @@ A structured, hands-on course repository covering everything from Python basics 
 
 | Section | Topic | Status | Contents |
 |---------|-------|--------|----------|
-| [01](./01-python-foundation/) | **Python Foundation** | ✅ Complete | OOP, Advanced Concepts, Logging, Multi-threading, Flask, Streamlit |
+| [01](./01-python-foundation/) | **Python Foundation** | 🔄 Partial | Basics, Control Flow, Data Structures, Functions, Modules, File I/O, OOP, Advanced, Logging, Threading, Memory, Flask, Streamlit |
 | [02](./02-statistics/) | **Statistics** | ✅ Complete | Descriptive Stats, Probability, Inferential Statistics |
-| [03](./03-data-analysis/) | **Data Analysis** | 🚧 In progress | NumPy, Pandas, Matplotlib, Seaborn, EDA |
+| [03](./03-data-analysis/) | **Data Analysis** | 🚧 Coming soon | NumPy, Pandas, Data Manipulation, Matplotlib, Seaborn, SQLite, EDA Projects |
 | [04](./04-feature-engineering/) | **Feature Engineering** | ✅ Complete | Missing Values, Outliers, Encoding, Imbalanced Data |
-| [05](./05-machine-learning/) | **Machine Learning** | 🚧 Coming soon | Regression, Classification, Clustering, Ensembles |
-| [06](./06-deep-learning/) | **Deep Learning** | 🚧 Coming soon | Neural Networks, CNN, RNN, Transfer Learning |
-| [07](./07-nlp/) | **NLP** | 🚧 Coming soon | Text Processing, Embeddings, Transformers, LLMs |
-| [08](./08-mlops-deployment/) | **MLOps & Deployment** | 🚧 Coming soon | Pipelines, MLflow, Docker, Cloud |
+| [05](./05-machine-learning/) | **Machine Learning** | 🚧 Coming soon | Linear→Polynomial Regression, Regularization, Logistic, SVM, Naive Bayes, KNN, Trees, Ensembles, Boosting, Unsupervised, Anomaly Detection |
+| [06](./06-deep-learning/) | **Deep Learning** | 🚧 Coming soon | ANN, CNN, RNN, LSTM/GRU, Attention & Transformers |
+| [07](./07-nlp/) | **NLP** | 🚧 Coming soon | Text Preprocessing, BOW/TF-IDF, Word2Vec, Deep Learning NLP |
+| [08](./08-mlops-deployment/) | **MLOps & Deployment** | 🚧 Coming soon | Docker, Git, End-to-End Projects, MLflow/DVC, BentoML |
 
 ---
 
@@ -96,7 +96,7 @@ For practical-only topics (scripts, web apps) there may be `.py` files instead o
 ## What's Inside Each Section
 
 ### 01 – Python Foundation
-Core Python for data science: OOP, generators, memory management, logging, concurrency, and web frameworks.
+13 sub-topics from basic syntax to web frameworks: variables, control flow, data structures, functions, modules, file I/O, OOP, iterators/generators, logging, concurrency, memory management, Flask, Streamlit.
 
 ### 02 – Statistics
 The mathematical bedrock of ML:
@@ -104,8 +104,8 @@ The mathematical bedrock of ML:
 - **Probability** – rules, distributions, Bayes' theorem, CLT
 - **Inferential Statistics** – CIs, hypothesis testing, t-tests, ANOVA, chi-square
 
-### 03 – Data Analysis *(in progress)*
-The daily tools: NumPy vectorised ops, Pandas DataFrames, and statistical visualisation.
+### 03 – Data Analysis *(coming soon)*
+NumPy, Pandas, data manipulation, reading from multiple sources, Matplotlib, Seaborn, SQLite, and three real-world EDA projects (Red Wine, Flight Price, Google Play Store).
 
 ### 04 – Feature Engineering
 Preparing raw data for ML models:
@@ -114,8 +114,17 @@ Preparing raw data for ML models:
 - Encoding categorical features (label, one-hot, ordinal, target)
 - Dealing with class imbalance (SMOTE, class weights)
 
-### 05–08 – ML, Deep Learning, NLP, MLOps *(coming soon)*
-Content added section by section as the course progresses.
+### 05 – Machine Learning *(coming soon)*
+17 sub-topics covering every major algorithm: linear through polynomial regression, regularisation, logistic regression, SVM, Naïve Bayes, KNN, decision trees, random forest, AdaBoost, gradient boosting, XGBoost, PCA, K-Means, DBSCAN, and anomaly detection.
+
+### 06 – Deep Learning *(coming soon)*
+ANN from scratch (activations, optimisers, dropout), CNN for images, RNN for sequences, LSTM/GRU for long-range dependencies, and the full Transformer architecture (self-attention through decoder).
+
+### 07 – NLP *(coming soon)*
+Text preprocessing with NLTK, classical feature extraction (BOW, N-Grams, TF-IDF), dense word embeddings (Word2Vec, AvgWord2Vec), deep learning-based NLP, and four end-to-end projects.
+
+### 08 – MLOps & Deployment *(coming soon)*
+Docker, Git/GitHub, two full-scale projects (Student Performance + Sensor Fault Detection with MongoDB/MLflow/DVC/GitHub Actions), and BentoML for serving models as APIs.
 
 ---
 
