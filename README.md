@@ -1,8 +1,8 @@
 # Zero to Hero: Python, Data Science, ML & AI
 
-A structured, hands-on course repository covering everything from Python basics to MLOps and deployment — following the [Complete Machine Learning, NLP Bootcamp (MLOps & Deployment)](https://www.udemy.com/course/complete-machine-learning-nlp-bootcamp-mlops-deployment/) curriculum.
+A structured, hands-on course repository covering everything from Python basics to MLOps and LLM applications — following the [Complete Machine Learning, NLP Bootcamp (MLOps & Deployment)](https://www.udemy.com/course/complete-machine-learning-nlp-bootcamp-mlops-deployment/) curriculum, extended with GenAI and LLM application projects.
 
-> If you find this helpful, please leave a ⭐
+> A one-stop learning resource for ML, DS, and AI. If you find this helpful, please leave a ⭐
 
 ---
 
@@ -13,7 +13,7 @@ A structured, hands-on course repository covering everything from Python basics 
        ↓
 04-feature-engineering  →  05-machine-learning  →  06-deep-learning
        ↓
-07-nlp  →  08-mlops-deployment
+07-nlp  →  08-mlops-deployment  →  projects (beginner → advanced → ai-llm)
 ```
 
 ---
@@ -22,7 +22,7 @@ A structured, hands-on course repository covering everything from Python basics 
 
 | Section | Topic | Status | Contents |
 |---------|-------|--------|----------|
-| [01](./01-python-foundation/) | **Python Foundation** | 🔄 Partial | Basics, Control Flow, Data Structures, Functions, Modules, File I/O, OOP, Advanced, Logging, Threading, Memory, Flask, Streamlit |
+| [01](./01-python-foundation/) | **Python Foundation** | ✅ Complete | Basics, Control Flow, Data Structures, Functions, Modules, File I/O, OOP, Advanced, Logging, Threading, Memory, Flask, Streamlit |
 | [02](./02-statistics/) | **Statistics** | ✅ Complete | Descriptive Stats, Probability, Inferential Statistics |
 | [03](./03-data-analysis/) | **Data Analysis** | 🚧 Coming soon | NumPy, Pandas, Data Manipulation, Matplotlib, Seaborn, SQLite, EDA Projects |
 | [04](./04-feature-engineering/) | **Feature Engineering** | ✅ Complete | Missing Values, Outliers, Encoding, Imbalanced Data |
@@ -30,6 +30,7 @@ A structured, hands-on course repository covering everything from Python basics 
 | [06](./06-deep-learning/) | **Deep Learning** | 🚧 Coming soon | ANN, CNN, RNN, LSTM/GRU, Attention & Transformers |
 | [07](./07-nlp/) | **NLP** | 🚧 Coming soon | Text Preprocessing, BOW/TF-IDF, Word2Vec, Deep Learning NLP |
 | [08](./08-mlops-deployment/) | **MLOps & Deployment** | 🚧 Coming soon | Docker, Git, End-to-End Projects, MLflow/DVC, BentoML |
+| [projects](./projects/) | **Projects** | 🏗️ Building | Beginner EDA → Intermediate ML → Advanced DL → AI/LLM (RAG, Agents) |
 
 ---
 
@@ -143,14 +144,49 @@ A single `uv sync` installs them all.
 
 ---
 
+## Projects
+
+End-to-end projects organised by difficulty — from beginner EDA to production MLOps and LLM applications.
+
+| Tier | Projects |
+|------|---------|
+| [Beginner](./projects/beginner/) | Titanic EDA, Iris Classifier, House Price Prediction, Student Performance |
+| [Intermediate](./projects/intermediate/) | Customer Churn, Fraud Detection, Time Series, Sentiment Analysis |
+| [Advanced](./projects/advanced/) | Image CNN, Transformer from Scratch, MLOps Pipeline, Sensor Fault Detection |
+| [AI / LLM](./projects/ai-llm/) | Document Q&A (RAG), Chatbot with Memory, Multi-doc Summariser, LLM Fine-tuning |
+
+See [projects/README.md](./projects/README.md) for full details and how to add your own project.
+
+---
+
+## Resources
+
+Curated free books, blogs, courses, cheatsheets, and YouTube channels to go deeper:
+
+→ **[RESOURCES.md](./RESOURCES.md)**
+
+Highlights:
+- [ISLR](https://www.statlearning.com) — free ML textbook PDF
+- [fast.ai](https://course.fast.ai) — best practical DL course
+- [Karpathy's Zero to Hero](https://karpathy.ai/zero-to-hero.html) — build GPT from scratch
+- [Jay Alammar's Blog](https://jalammar.github.io) — best visual transformer explainers
+- [HuggingFace Learn](https://huggingface.co/learn) — NLP, LLM, Agents courses
+
+---
+
 ## Contributing
 
-Contributions are welcome! Whether it's fixing a bug, adding examples, or improving notes:
+Contributions are welcome! Whether it's fixing a typo, adding examples, filling in a "coming soon" section, or adding a project:
 
+→ **[CONTRIBUTING.md](./CONTRIBUTING.md)**
+
+Quick steps:
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/add-numpy-section`)
-3. Commit your changes
-4. Open a pull request
+3. Commit your changes (follow the notebook conventions in CONTRIBUTING.md)
+4. Open a pull request using the PR template
+
+GitHub issue templates are available for [bug reports](./.github/ISSUE_TEMPLATE/bug-report.md) and [content requests](./.github/ISSUE_TEMPLATE/content-request.md).
 
 ---
 
