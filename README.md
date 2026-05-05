@@ -24,13 +24,13 @@ A structured, hands-on course repository covering everything from Python basics 
 |---------|-------|--------|----------|
 | [01](./01-python-foundation/) | **Python Foundation** | ✅ Complete | Basics, Control Flow, Data Structures, Functions, Modules, File I/O, OOP, Advanced, Logging, Threading, Memory, Flask, Streamlit |
 | [02](./02-statistics/) | **Statistics** | ✅ Complete | Descriptive Stats, Probability, Inferential Statistics |
-| [03](./03-data-analysis/) | **Data Analysis** | 🚧 Coming soon | NumPy, Pandas, Data Manipulation, Matplotlib, Seaborn, SQLite, EDA Projects |
+| [03](./03-data-analysis/) | **Data Analysis** | ✅ Complete | NumPy, Pandas, Data Manipulation, Reading Data, Matplotlib, Seaborn, SQLite, EDA Projects |
 | [04](./04-feature-engineering/) | **Feature Engineering** | ✅ Complete | Missing Values, Outliers, Encoding, Imbalanced Data |
 | [05](./05-machine-learning/) | **Machine Learning** | 🚧 Coming soon | Linear→Polynomial Regression, Regularization, Logistic, SVM, Naive Bayes, KNN, Trees, Ensembles, Boosting, Unsupervised, Anomaly Detection |
 | [06](./06-deep-learning/) | **Deep Learning** | 🚧 Coming soon | ANN, CNN, RNN, LSTM/GRU, Attention & Transformers |
 | [07](./07-nlp/) | **NLP** | 🚧 Coming soon | Text Preprocessing, BOW/TF-IDF, Word2Vec, Deep Learning NLP |
 | [08](./08-mlops-deployment/) | **MLOps & Deployment** | 🚧 Coming soon | Docker, Git, End-to-End Projects, MLflow/DVC, BentoML |
-| [projects](./projects/) | **Projects** | 🏗️ Building | Beginner EDA → Intermediate ML → Advanced DL → AI/LLM (RAG, Agents) |
+| [projects](./projects/) | **Projects** | 🔄 Growing | Beginner: Titanic EDA, Iris Classifier, House Prices, Student Performance (all with notebooks) |
 
 ---
 
