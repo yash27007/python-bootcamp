@@ -1,6 +1,2 @@
 # 05 – Cross Validation
-
-| Topic | Status |
-|-------|--------|
-| Types of Cross Validation | 🚧 Coming soon |
-| Hyperparameter Tuning | 🚧 Coming soon |
+In this section, we will learn about cross-validation, a powerful technique for evaluating the performance of machine learning models. Cross-validation helps us to assess how well our model generalizes to unseen data, which is crucial for making reliable predictions.

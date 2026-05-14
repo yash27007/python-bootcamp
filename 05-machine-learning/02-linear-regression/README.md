@@ -24,3 +24,6 @@ This folder contains theory notes for linear regression, organized to match the 
 | 151. Simple Linear Regression Practical | Skipped (practical) |
 | 152. Multiple Linear Regression Practical | Skipped (practical) |
 | 153. Polynomial Regression Intuition | Complete |
+
+ A project with multicolinearity. How to deal with it.
+ - Multicollinearity occurs when two or more independent variables in a regression model are highly correlated, making it difficult to determine the individual effect of each variable on the dependent variable.
