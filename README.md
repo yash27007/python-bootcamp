@@ -26,7 +26,7 @@ A structured, hands-on course repository covering everything from Python basics 
 | [02](./02-statistics/) | **Statistics** | ✅ Complete | Descriptive Stats, Probability, Inferential Statistics |
 | [03](./03-data-analysis/) | **Data Analysis** | ✅ Complete | NumPy, Pandas, Data Manipulation, Reading Data, Matplotlib, Seaborn, SQLite, EDA Projects |
 | [04](./04-feature-engineering/) | **Feature Engineering** | ✅ Complete | Missing Values, Outliers, Encoding, Imbalanced Data |
-| [05](./05-machine-learning/) | **Machine Learning** | 🚧 Coming soon | Linear→Polynomial Regression, Regularization, Logistic, SVM, Naive Bayes, KNN, Trees, Ensembles, Boosting, Unsupervised, Anomaly Detection |
+| [05](./05-machine-learning/) | **Machine Learning** | ✅ Complete | Linear→Polynomial Regression, Regularization, Logistic, SVM, Naive Bayes, KNN, Trees, Ensembles, Boosting, XGBoost, PCA, K-Means, Hierarchical, DBSCAN, Isolation Forest, LOF |
 | [06](./06-deep-learning/) | **Deep Learning** | 🚧 Coming soon | ANN, CNN, RNN, LSTM/GRU, Attention & Transformers |
 | [07](./07-nlp/) | **NLP** | 🚧 Coming soon | Text Preprocessing, BOW/TF-IDF, Word2Vec, Deep Learning NLP |
 | [08](./08-mlops-deployment/) | **MLOps & Deployment** | 🚧 Coming soon | Docker, Git, End-to-End Projects, MLflow/DVC, BentoML |
@@ -115,8 +115,8 @@ Preparing raw data for ML models:
 - Encoding categorical features (label, one-hot, ordinal, target)
 - Dealing with class imbalance (SMOTE, class weights)
 
-### 05 – Machine Learning *(coming soon)*
-17 sub-topics covering every major algorithm: linear through polynomial regression, regularisation, logistic regression, SVM, Naïve Bayes, KNN, decision trees, random forest, AdaBoost, gradient boosting, XGBoost, PCA, K-Means, DBSCAN, and anomaly detection.
+### 05 – Machine Learning
+18 sub-topics covering every major algorithm: linear through polynomial regression, regularisation, logistic regression, SVM, Naïve Bayes, KNN, decision trees, random forest, AdaBoost, gradient boosting, XGBoost, PCA (with eigen decomposition), K-Means (K-Means++, elbow method), hierarchical clustering (Ward linkage, dendrograms), DBSCAN, silhouette analysis, isolation forest, local outlier factor, and DBSCAN-based anomaly detection.
 
 ### 06 – Deep Learning *(coming soon)*
 ANN from scratch (activations, optimisers, dropout), CNN for images, RNN for sequences, LSTM/GRU for long-range dependencies, and the full Transformer architecture (self-attention through decoder).
