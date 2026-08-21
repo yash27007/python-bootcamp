@@ -20,7 +20,6 @@ Supervised, unsupervised, and ensemble methods from first principles to producti
 | 14 | [XGBoost](./14-xgboost/) | ✅ Complete | Ensemble – Boosting |
 | 15 | [Unsupervised Learning](./15-unsupervised-learning/) | ✅ Complete | K-Means, Hierarchical, DBSCAN, Silhouette |
 | 16 | [Anomaly Detection](./16-anomaly-detection/) | ✅ Complete | Isolation Forest, LOF, DBSCAN |
-| 17 | [Projects](./17-projects/) | 🚧 Coming soon | End-to-end regression & deployment |
 | 18 | [PCA](./18-pca/) | ✅ Complete | Dimensionality Reduction |
 
 **Legend**: ✅ Complete (notes + code) · 📝 Notes only · 🚧 Coming soon

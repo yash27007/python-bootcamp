@@ -13,7 +13,7 @@ A structured, hands-on course repository covering everything from Python basics 
        ↓
 04-feature-engineering  →  05-machine-learning  →  06-deep-learning
        ↓
-07-nlp  →  08-mlops-deployment  →  projects (beginner → advanced → ai-llm)
+07-nlp  →  08-mlops-deployment  →  projects (beginner)
 ```
 
 ---
@@ -30,7 +30,7 @@ A structured, hands-on course repository covering everything from Python basics 
 | [06](./06-deep-learning/) | **Deep Learning** | 🚧 Coming soon | ANN, CNN, RNN, LSTM/GRU, Attention & Transformers |
 | [07](./07-nlp/) | **NLP** | 🚧 Coming soon | Text Preprocessing, BOW/TF-IDF, Word2Vec, Deep Learning NLP |
 | [08](./08-mlops-deployment/) | **MLOps & Deployment** | 🚧 Coming soon | Docker, Git, End-to-End Projects, MLflow/DVC, BentoML |
-| [projects](./projects/) | **Projects** | 🔄 Growing | Beginner: Titanic EDA, Iris Classifier, House Prices, Student Performance (all with notebooks) |
+| [projects](./projects/) | **Projects** | 🔄 Growing | Beginner: Titanic EDA, Iris Classifier, House Prices, Student Performance (all with notebooks) — bigger projects: [ml-spi](https://github.com/yash27007/ml-spi) |
 
 ---
 
@@ -122,10 +122,10 @@ Preparing raw data for ML models:
 ANN from scratch (activations, optimisers, dropout), CNN for images, RNN for sequences, LSTM/GRU for long-range dependencies, and the full Transformer architecture (self-attention through decoder).
 
 ### 07 – NLP *(coming soon)*
-Text preprocessing with NLTK, classical feature extraction (BOW, N-Grams, TF-IDF), dense word embeddings (Word2Vec, AvgWord2Vec), deep learning-based NLP, and four end-to-end projects.
+Text preprocessing with NLTK, classical feature extraction (BOW, N-Grams, TF-IDF), dense word embeddings (Word2Vec, AvgWord2Vec), and deep learning-based NLP.
 
 ### 08 – MLOps & Deployment *(coming soon)*
-Docker, Git/GitHub, two full-scale projects (Student Performance + Sensor Fault Detection with MongoDB/MLflow/DVC/GitHub Actions), and BentoML for serving models as APIs.
+Docker, Git/GitHub, MLflow/DagsHub for experiment tracking, and BentoML for serving models as APIs.
 
 ---
 
@@ -146,16 +146,15 @@ A single `uv sync` installs them all.
 
 ## Projects
 
-End-to-end projects organised by difficulty — from beginner EDA to production MLOps and LLM applications.
+Small beginner projects that apply the earlier sections live here:
 
 | Tier | Projects |
 |------|---------|
 | [Beginner](./projects/beginner/) | Titanic EDA, Iris Classifier, House Price Prediction, Student Performance |
-| [Intermediate](./projects/intermediate/) | Customer Churn, Fraud Detection, Time Series, Sentiment Analysis |
-| [Advanced](./projects/advanced/) | Image CNN, Transformer from Scratch, MLOps Pipeline, Sensor Fault Detection |
-| [AI / LLM](./projects/ai-llm/) | Document Q&A (RAG), Chatbot with Memory, Multi-doc Summariser, LLM Fine-tuning |
 
-See [projects/README.md](./projects/README.md) for full details and how to add your own project.
+Bigger, production-style ML projects live in a separate repo so this course stays focused on learning material: **[github.com/yash27007/ml-spi](https://github.com/yash27007/ml-spi)**.
+
+See [projects/README.md](./projects/README.md) for full details and how to add your own beginner project.
 
 ---
 
