@@ -1,7 +1,9 @@
 # 13 – Gradient Boosting
 
+Detailed notes: [notes.md](notes.md)
+
 | Topic | Status |
 |-------|--------|
-| Gradient Boosting Regression Intuition | 🚧 Coming soon |
-| Gradient Boost Classifier | 🚧 Coming soon |
-| Gradient Boost Regressor | 🚧 Coming soon |
+| Gradient Boosting Regression Intuition | ✅ Notes available |
+| Gradient Boost Classifier | ✅ Notes available |
+| Gradient Boost Regressor | ✅ Notes available |

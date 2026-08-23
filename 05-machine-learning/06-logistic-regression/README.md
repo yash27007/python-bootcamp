@@ -10,4 +10,4 @@ Detailed notes: [notes.md](notes.md)
 | Imbalanced Dataset Handling | ✅ Notes available |
 | Regularization and Optimization | ✅ Notes available |
 | Thresholding and Calibration | ✅ Notes available |
-| Grid Search & RandomizedSearchCV | 🚧 Coming soon |
+| Grid Search & RandomizedSearchCV | ✅ Notes available |

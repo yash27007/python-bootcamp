@@ -96,7 +96,7 @@ DBSCAN (full derivation in `15-unsupervised-learning`, §4.3) already produces a
 
 A from-scratch `lof_scratch` implementation (k-distance → reach-dist → lrd → LOF, matching §4.3 term-by-term) is in `03-local-outlier-factor/Local-Outlier-Factor.ipynb`, §7 ("Implementation from Scratch"), validated by comparing its ranking of anomaly scores against `sklearn.neighbors.LocalOutlierFactor`'s on the same data.
 
-Isolation Forest and DBSCAN are not reimplemented from scratch here — Isolation Forest's value lies in an ensemble of many random trees over resampled data, which is a straightforward but not conceptually illuminating engineering exercise once the single-tree splitting logic is understood (and decision trees are already implemented from scratch in `06-decision-tree`); DBSCAN's from-scratch implementation lives in `15-unsupervised-learning/03-dbscan-clustering/DBSCAN-Clustering.ipynb` and is reused conceptually here rather than duplicated.
+Isolation Forest and DBSCAN are not reimplemented from scratch here — Isolation Forest's value lies in an ensemble of many random trees over resampled data, which is a straightforward but not conceptually illuminating engineering exercise once the single-tree splitting logic is understood (and decision trees are already implemented from scratch in `10-decision-tree`); DBSCAN's from-scratch implementation lives in `15-unsupervised-learning/03-dbscan-clustering/DBSCAN-Clustering.ipynb` and is reused conceptually here rather than duplicated.
 
 ## 7. Practical implementation
 

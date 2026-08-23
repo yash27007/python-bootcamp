@@ -9,6 +9,7 @@ Supervised, unsupervised, and ensemble methods from first principles to producti
 | 03 | [Polynomial Regression](./03-polynomial-regression/) | ✅ Complete | Supervised – Regression |
 | 04 | [Regularization (Ridge, Lasso, ElasticNet)](./04-regularization/) | ✅ Complete | Supervised – Regression |
 | 05 | [Cross Validation](./05-cross-validation/) | ✅ Complete | Model Selection |
+| 05b | [Bias-Variance Tradeoff](./05b-bias-variance-tradeoff/) | ✅ Complete | Model Selection |
 | 06 | [Logistic Regression](./06-logistic-regression/) | ✅ Complete | Supervised – Classification |
 | 07 | [Support Vector Machines](./07-svm/) | ✅ Complete | Supervised |
 | 08 | [Naïve Bayes](./08-naive-bayes/) | ✅ Complete | Supervised – Classification |
