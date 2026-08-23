@@ -47,6 +47,16 @@ Because each layer's identity is a hash of "the instruction plus everything befo
 
 `build_cache.py` in this same folder is a small, real, executed implementation of exactly this caching mechanism, stripped down to its essence — see "From-scratch implementation" below.
 
+### Containers vs virtual machines: why containers are lighter, and what that costs
+
+The layered filesystem explained above is also what explains *why* a container is so much cheaper to start than a virtual machine — this isn't just "containers happen to be smaller," it follows directly from what each one actually virtualizes.
+
+A **virtual machine** virtualizes hardware. A **hypervisor** (e.g. VMware, KVM, Hyper-V — the layer Docker Desktop itself runs on top of on Windows/Mac) presents each VM with emulated virtual hardware — a virtual CPU, virtual disk, virtual NIC — and each VM boots its **own full guest operating system and kernel** on top of that virtual hardware, completely independent of the host's kernel. Two VMs on the same physical machine are, from the kernel's point of view, two entirely separate operating systems that happen to share a physical box; each one pays the cost of a full OS boot (initializing its own kernel, drivers, init system) and a full OS's worth of memory/disk footprint (typically gigabytes) before any application code runs.
+
+A **container** virtualizes at a much shallower level: the process and filesystem level, not the hardware level. Every container on a host **shares that host's single kernel** — there is no separate guest kernel to boot. What makes a container feel like an isolated machine is exactly the layered/union filesystem mechanism from the section above (its own private view of a filesystem, built from cached, shareable layers) combined with kernel features (Linux namespaces for process/network/mount isolation, cgroups for resource limits) that make one kernel *look* like many independent machines to each process running under it. Starting a container is therefore not "boot an OS" — it's "start a process, with a namespaced, layered filesystem view already sitting on disk from the cached image layers" — which is why containers start in a second or two and add megabytes of overhead, where a VM takes minutes and gigabytes.
+
+This lighter weight is a direct trade against isolation strength, not a free win: because every container shares the host's actual kernel, a serious enough vulnerability in the container runtime or the kernel itself can let a process **escape** the container's namespace and reach the host directly — a "container escape" compromises the host and every other container sharing that kernel. A VM's isolation boundary sits at the hardware-virtualization layer, one level below the guest kernel, so a VM escape (compromising the hypervisor itself, not just the guest OS) is a substantially harder, rarer class of vulnerability. This is *why* production systems that need the strongest possible isolation between untrusted workloads (e.g. multi-tenant cloud platforms running arbitrary customer code) often still reach for VMs, or hybrid approaches (gVisor, Firecracker microVMs) that try to recover container-like startup speed without fully sharing the host kernel — the container-vs-VM choice is a real, ongoing engineering trade-off between startup cost/density and isolation strength, not a solved question where containers simply "win."
+
 ### Image vs container
 
 An **image** is the read-only layer stack itself — a template, sitting on disk (or in a registry), that does nothing on its own. A **container** is a *running instance* of an image: Docker takes the image's read-only layers, adds exactly one additional **writable layer** on top (the "container layer"), and starts a process inside that combined filesystem view. Any file the running process writes, deletes, or modifies lands only in that thin writable layer; the underlying image layers are never touched.
@@ -96,6 +106,19 @@ The `docker` CLI binary exists on the Windows side but there is no working Docke
 docker build -t iris-predictor .
 docker run -p 5000:5000 iris-predictor
 ```
+
+### Publishing images: tags and registries
+
+A **registry** is a server that stores images and distributes them by name and tag — the same relationship a package index (PyPI) has to Python packages, or a Git remote (GitHub) has to repository history. **Docker Hub** is the default *public* registry (`docker.io`), where an unqualified name like `python:3.11.9-slim-bookworm` in this topic's `FROM` line resolves to `docker.io/library/python:3.11.9-slim-bookworm` unless told otherwise. Production systems commonly use a *private* registry instead — Amazon ECR, Google Artifact Registry/GCR, Azure Container Registry, or a self-hosted registry — for images that shouldn't be publicly downloadable (proprietary code, or images that embed anything sensitive per the "secrets baked into image layers" failure mode below).
+
+The publish workflow, as it would run with a working Docker daemon (conceptual/workflow content here, same footing as the Dockerfile itself — not executed in this environment, per the constraint stated above):
+
+1. **`docker login <registry>`** — authenticate to the target registry (Docker Hub by default, or `docker login <account>.dkr.ecr.<region>.amazonaws.com` for a private one). Credentials are cached locally so subsequent pushes don't re-prompt.
+2. **`docker tag iris-predictor:latest <username>/iris-predictor:1.0.0`** — a **tag** is not a copy of the image; it's an additional name pointing at the same underlying image ID (the same content-addressed layer stack from "Conceptual foundation"). One image can carry several tags at once (e.g. both `1.0.0` and `latest`) with zero extra storage cost, for the same reason two Git branches can point at the same commit.
+3. **`docker push <username>/iris-predictor:1.0.0`** — uploads only the layers the registry doesn't already have (again, content-addressing at work: if the registry already holds the exact `python:3.11.9-slim-bookworm` base layer from some other image, only this image's later, changed layers actually transfer).
+4. **`docker pull <username>/iris-predictor:1.0.0`** — the inverse, run wherever the image needs to actually be used (a CI runner, a production host, a teammate's machine) — this is the step that turns "an image exists on my machine" into "it works everywhere," closing the loop back to this topic's opening Problem.
+
+Tagging with a specific version (`1.0.0`) rather than only ever pushing `latest` matters for the same reproducibility reason "Failure modes" gives for pinning a base image: `latest` is a moving pointer that gets silently reassigned on every push, while `1.0.0` is a name a deployment can pin to and trust to always resolve to the exact same layer stack.
 
 ## From-scratch implementation
 
@@ -164,7 +187,8 @@ This is the mechanism Docker's build cache uses underneath `docker build`, made 
 
 - **Containerized training jobs.** A training script's exact library/CUDA/cuDNN versions matter enormously for numerical reproducibility; packaging the training environment as an image means "rerun this experiment" reproduces the same environment on any machine (or cluster node) that can run the image, not just the one it was developed on.
 - **Containerized model serving.** This topic's `app.py` + `Dockerfile` is the minimal version of a pattern used everywhere in production ML: a served model wrapped in a lightweight HTTP layer, packaged as an image, deployed identically to a laptop, a staging environment, or a Kubernetes cluster — the same image, unmodified, at every stage.
-- **CI/CD pipelines** build and test inside containers precisely so "tests passed in CI" means the same environment the code will actually run in, not a coincidentally-similar one.
+- **CI/CD pipelines** build and test inside containers precisely so "tests passed in CI" means the same environment the code will actually run in, not a coincidentally-similar one; a CI job that passes typically ends with exactly the `docker tag` / `docker push` workflow above, publishing the newly-built image to a registry for deployment.
+- **Registries as the deployment handoff point.** In practice, "deploying a new model version" is very often just: build an image, tag it with a version, push it to a private registry (ECR/GCR/self-hosted), and have the production environment `docker pull` that exact tag — the registry is the boundary between "built somewhere" and "running somewhere else," the same role a Git remote plays for source code.
 
 ## Mental model
 
