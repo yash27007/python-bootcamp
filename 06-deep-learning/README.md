@@ -4,11 +4,11 @@ Neural networks, backpropagation, and modern architectures with Keras / TensorFl
 
 | # | Topic | Status |
 |---|-------|--------|
-| 01 | [ANN](./01-ann/) | 🚧 Coming soon | Perceptron, activations, optimisers, dropout, weight init |
-| 02 | [CNN](./02-cnn/) | 🚧 Coming soon | Convolution, pooling, image classification |
-| 03 | [RNN](./03-rnn/) | 🚧 Coming soon | RNN architecture, IMDB sentiment analysis |
-| 04 | [LSTM & GRU](./04-lstm-gru/) | 🚧 Coming soon | LSTM gates, GRU, Bidirectional RNN, stock prediction |
-| 05 | [Attention & Transformers](./05-attention-transformers/) | 🚧 Coming soon | Self-attention, multi-head attention, positional encoding, encoder-decoder |
+| 01 | [ANN](./01-ann/) | ✅ Complete | Perceptron, activations, optimisers, dropout, weight init |
+| 02 | [CNN](./02-cnn/) | ✅ Complete | Convolution, pooling, image classification |
+| 03 | [RNN](./03-rnn/) | ✅ Complete | RNN architecture, IMDB sentiment analysis |
+| 04 | [LSTM & GRU](./04-lstm-gru/) | ✅ Complete | LSTM gates, GRU, Bidirectional RNN, stock prediction |
+| 05 | [Attention & Transformers](./05-attention-transformers/) | ✅ Complete | Self-attention, multi-head attention, positional encoding, encoder-decoder |
 
 ## Prerequisites
 
