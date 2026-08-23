@@ -1,0 +1,44 @@
+name: Testing CI
+
+# Triggered by the exact Git events 08-mlops-deployment/02-git teaches:
+# a push to main, or any pull request targeting main. This is the
+# automated equivalent of 07-cicd's pipeline_gate.sh Stage 1 -- except
+# nobody has to remember to run it, and a failure blocks the PR from
+# being merged (via branch protection / required-status-checks) instead
+# of only failing "if someone happened to run it locally first".
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Run 03-testing-ci pytest suite
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Install dependencies (from pyproject.toml / uv.lock)
+        run: uv sync --frozen
+
+      # This is the same suite documented and executed by hand in
+      # 08-mlops-deployment/03-testing-ci/notes.md -- same path, same
+      # command, only the runner (a GitHub-hosted VM, not a person) and
+      # the trigger (every push/PR, not "when someone remembers") change.
+      - name: Run pytest on 03-testing-ci's pipeline suite
+        run: uv run pytest 08-mlops-deployment/03-testing-ci/test_pipeline.py -v
+
+      # A non-zero exit code from the step above fails this job, which
+      # GitHub reports back on the commit/PR as a failed check -- the
+      # automated gate that 07-cicd/notes.md's "Conceptual foundation"
+      # section describes.
