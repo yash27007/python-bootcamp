@@ -68,7 +68,12 @@ No renumbering of existing sections `01`–`08`. New tracks are appended; gaps i
 09-pytorch             — after 06 is retrofitted; maps every NumPy/Keras concept already built to autograd/nn.Module
 10-distributed-data     — PySpark (local mode) + streaming/Kafka concepts, single-machine-bottleneck-first framing
 07-nlp/05-transformers-and-huggingface — extends the existing from-scratch attention work (06/05), not a disconnected section
-08-mlops-deployment/03-testing-ci, /04-data-model-versioning, /07-cicd, /08-monitoring — fills the existing gap + extends the progression
+08-mlops-deployment/03-testing-ci, /04-model-packaging-versioning, /07-cicd, /08-monitoring — fills the existing gap + extends the progression
+11-generative-ai        — GANs and diffusion models, first-principles (added 2026-08-23, owner request — see §7)
+12-reinforcement-learning — MDPs → Q-learning → policy gradients, first-principles (added 2026-08-23, owner request)
+13-llms-from-scratch    — tokenizer → pretraining objective → instruction tuning, conceptual + toy-scale only (added 2026-08-23, owner request)
+14-multi-agent-systems  — agent communication/orchestration patterns, multi-agent swarms (added 2026-08-23, owner request)
+15-agent-skills-and-mcp — Agent Skills and Model Context Protocol tooling, first-principles (added 2026-08-23, owner request)
 ```
 
 **Explicitly out of scope for this repository:** Go, DSA (owner confirmed — tracked elsewhere). Edge AI / robotics: acknowledged as a future direction (owner roadmap item 9) but gets no content yet — only an honest "Planned" marker, per the Learned/Currently-learning/Planned distinction in §1.
@@ -94,7 +99,20 @@ Each phase is its own plan (`docs/superpowers/plans/`), executed via `superpower
 | 6 | New `07-nlp/05-transformers-and-huggingface` |
 | 7 | Retrofit `01-python-foundation`, `02-statistics`, `03-data-analysis`, `04-feature-engineering` (foundational, lowest urgency) |
 | 8 | `projects/` restructure to index-cards |
+| 9 | New `11-generative-ai` (GANs, diffusion models) |
+| 10 | New `12-reinforcement-learning` (MDPs, Q-learning, policy gradients) |
+| 11 | New `13-llms-from-scratch` (tokenizer → pretraining objective → instruction tuning) |
+| 12 | New `14-multi-agent-systems` (communication protocols, orchestration, swarms) |
+| 13 | New `15-agent-skills-and-mcp` (Agent Skills, Model Context Protocol) |
+
+Phases 9–13 were added 2026-08-23 at the owner's explicit request, after reviewing github.com/rohitg00/ai-engineering-from-scratch for structural (not content) ideas — see §7. Phase order beyond that point is not fixed; the owner may reprioritize which of 4–13 goes next at any time.
 
 ## 6. Non-goals
 
 Not a giant destructive rewrite in one pass. Not deleting working notebooks to make the structure look cleaner — existing good notebooks/explanations are improved, not discarded. Not adding a technology without a legible conceptual on-ramp. Not writing content as though the owner already knows something they're still learning.
+
+**Phases 9–13 specifically:** no heavy/long-running training. RL agents, GANs/diffusion models, and LLM pretraining are conceptually expensive to train for real — every from-scratch and practical-implementation step in these phases uses toy-scale data and small enough models/iteration counts to run in seconds-to-low-minutes, the same discipline already established in Phase 3 (e.g. `08-monitoring`'s drift-detection demo). Where a real, useful demonstration genuinely cannot run at toy scale (e.g. an actual GPT-2-scale pretraining run), the content is written and reviewed like Phase 3's un-executed Dockerfile/DVC sections — explicit derivation and a correct, realistic script — but honestly marked as not executed in this environment, never fabricated as if it ran.
+
+## 7. Amendment log
+
+- **2026-08-23:** owner asked to review github.com/rohitg00/ai-engineering-from-scratch (511-lesson, 20-phase curriculum: math foundations → classical ML → DL → CV/NLP/speech → transformers → generative AI → RL → LLMs-from-scratch → LLM engineering → multimodal → agent systems → production). Comparison: its core lesson shape (Problem → Concept → from-scratch build → framework use) converges with this spec's Problem → Why-simpler-fails → From-scratch → Practical sequence — independently arrived at, not copied. Its "Ship It" step (every lesson produces a reusable artifact — a prompt, skill, agent, or MCP server) doesn't fit classical ML/DL/MLOps topics but is a natural fit for the new `15-agent-skills-and-mcp` phase. No content, prose, or code was copied from that repo — only the structural comparison above informed this amendment. Owner then explicitly requested Phases 9–13 be added to this repo's own scope, overriding this spec's earlier "not become an everything-AI-dump" caution for these five specific topics; the "no heavy training" non-goal in §6 is the binding constraint that keeps this expansion honest rather than resume-padding.

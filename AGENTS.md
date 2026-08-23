@@ -66,9 +66,14 @@ No renumbering of existing sections for aesthetics. New tracks are appended; exi
 ```
 01-python-foundation  02-statistics  03-data-analysis  04-feature-engineering
 05-machine-learning   06-deep-learning  07-nlp  08-mlops-deployment
-09-pytorch (planned)  10-distributed-data (planned)
+09-pytorch (planned)          10-distributed-data (planned)
+11-generative-ai (planned)    12-reinforcement-learning (planned)
+13-llms-from-scratch (planned) 14-multi-agent-systems (planned)
+15-agent-skills-and-mcp (planned)
 projects/  docs/
 ```
+
+Sections 11–15 (generative AI, RL, LLMs-from-scratch, multi-agent systems, agent skills/MCP) carry one extra constraint: no heavy/long-running training. Every from-scratch and practical step in these sections runs at toy scale (seconds to low minutes). Where a genuinely useful demo can't run at toy scale, write and review the real script but mark it honestly as not executed in this environment — never fabricate output, same discipline as an un-executed Dockerfile.
 
 `projects/` root holds only external-project index cards (problem, why it matters, concepts learned, tech, prerequisites, link to the real repo, expected outcomes) — no full implementations in-repo. `projects/beginner/*` is the exception: small, self-contained starter notebooks that don't warrant their own external repo.
 
