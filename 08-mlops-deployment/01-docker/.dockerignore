@@ -1,0 +1,12 @@
+# Keep the build context (what gets sent to the Docker daemon before any
+# instruction runs) small and free of anything that shouldn't end up
+# baked into an image layer -- see notes.md "Failure modes" (secrets
+# baked into image layers, image bloat).
+.venv/
+__pycache__/
+*.pyc
+.build_cache/
+.git/
+.mini-git/
+*.log
+.env

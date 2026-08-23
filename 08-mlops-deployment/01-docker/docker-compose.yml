@@ -1,0 +1,27 @@
+# docker-compose.yml -- worked example for the "Docker Compose" subtopic
+# from this folder's original README subtopic list.
+#
+# Like the Dockerfile, this has been written and reviewed for correctness
+# but NOT executed in this environment (no working Docker daemon -- see
+# Dockerfile's top comment and notes.md). Compose's job here is small on
+# purpose: a single service, with the port mapping and healthcheck spelled
+# out declaratively instead of typed by hand on every `docker run`.
+#
+# Equivalent to running by hand:
+#   docker build -t iris-predictor .
+#   docker run -p 5000:5000 --name iris-predictor iris-predictor
+# but reproducible and shareable as one file: `docker compose up`.
+
+services:
+  model-server:
+    build: .
+    image: iris-predictor:latest
+    ports:
+      - "5000:5000"   # host:container -- reach the app at localhost:5000
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health', timeout=2)"]
+      interval: 30s
+      timeout: 3s
+      start_period: 5s
+      retries: 3
+    restart: unless-stopped
