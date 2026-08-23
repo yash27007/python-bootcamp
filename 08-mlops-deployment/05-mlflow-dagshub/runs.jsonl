@@ -1,0 +1,3 @@
+{"run_id": "dad556024802", "timestamp": "2026-08-23T18:20:09Z", "params": {"C": 0.01, "model": "LogisticRegression"}, "metrics": {"accuracy": 0.9649122807017544}}
+{"run_id": "4c05a84bc411", "timestamp": "2026-08-23T18:20:09Z", "params": {"C": 1.0, "model": "LogisticRegression"}, "metrics": {"accuracy": 0.9736842105263158}}
+{"run_id": "3b6bb1a1fc18", "timestamp": "2026-08-23T18:20:09Z", "params": {"C": 100.0, "model": "LogisticRegression"}, "metrics": {"accuracy": 0.9385964912280702}}
