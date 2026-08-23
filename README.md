@@ -27,8 +27,8 @@ A structured, hands-on course repository covering everything from Python basics 
 | [03](./03-data-analysis/) | **Data Analysis** | ✅ Complete | NumPy, Pandas, Data Manipulation, Reading Data, Matplotlib, Seaborn, SQLite, EDA Projects |
 | [04](./04-feature-engineering/) | **Feature Engineering** | ✅ Complete | Missing Values, Outliers, Encoding, Imbalanced Data |
 | [05](./05-machine-learning/) | **Machine Learning** | ✅ Complete | Linear→Polynomial Regression, Regularization, Logistic, SVM, Naive Bayes, KNN, Trees, Ensembles, Boosting, XGBoost, PCA, K-Means, Hierarchical, DBSCAN, Isolation Forest, LOF |
-| [06](./06-deep-learning/) | **Deep Learning** | 🚧 Coming soon | ANN, CNN, RNN, LSTM/GRU, Attention & Transformers |
-| [07](./07-nlp/) | **NLP** | 🚧 Coming soon | Text Preprocessing, BOW/TF-IDF, Word2Vec, Deep Learning NLP |
+| [06](./06-deep-learning/) | **Deep Learning** | ✅ Complete | ANN, CNN, RNN, LSTM/GRU, Attention & Transformers |
+| [07](./07-nlp/) | **NLP** | ✅ Complete | Text Preprocessing, BOW/TF-IDF, Word2Vec, Deep Learning NLP |
 | [08](./08-mlops-deployment/) | **MLOps & Deployment** | 🚧 Coming soon | Docker, Git, End-to-End Projects, MLflow/DVC, BentoML |
 | [projects](./projects/) | **Projects** | 🔄 Growing | Beginner: Titanic EDA, Iris Classifier, House Prices, Student Performance (all with notebooks) — bigger projects: [ml-spi](https://github.com/yash27007/ml-spi) |
 
@@ -118,10 +118,10 @@ Preparing raw data for ML models:
 ### 05 – Machine Learning
 18 sub-topics covering every major algorithm: linear through polynomial regression, regularisation, logistic regression, SVM, Naïve Bayes, KNN, decision trees, random forest, AdaBoost, gradient boosting, XGBoost, PCA (with eigen decomposition), K-Means (K-Means++, elbow method), hierarchical clustering (Ward linkage, dendrograms), DBSCAN, silhouette analysis, isolation forest, local outlier factor, and DBSCAN-based anomaly detection.
 
-### 06 – Deep Learning *(coming soon)*
+### 06 – Deep Learning
 ANN from scratch (activations, optimisers, dropout), CNN for images, RNN for sequences, LSTM/GRU for long-range dependencies, and the full Transformer architecture (self-attention through decoder).
 
-### 07 – NLP *(coming soon)*
+### 07 – NLP
 Text preprocessing with NLTK, classical feature extraction (BOW, N-Grams, TF-IDF), dense word embeddings (Word2Vec, AvgWord2Vec), and deep learning-based NLP.
 
 ### 08 – MLOps & Deployment *(coming soon)*
