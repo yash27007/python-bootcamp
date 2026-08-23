@@ -56,6 +56,12 @@ column, a class that's missing from a fold) because a human eyeballing
 
 ## Conceptual foundation
 
+This section is titled "Conceptual foundation" rather than "Mathematical
+foundation": testing strategy has no closed-form math to derive — the
+foundational idea here is conceptual (how to structure a test suite around
+an ML pipeline, and what a "test" even means when there's no single
+correct output), not mathematical.
+
 ### The test pyramid, adapted to ML
 
 The classic software test pyramid (many fast unit tests at the bottom, a

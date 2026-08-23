@@ -29,8 +29,8 @@ Every topic in this course, and every real ML codebase, lives in Git. Understand
 
 - Every collaborative codebase, including this one.
 - CI/CD pipelines (`08-mlops-deployment/07-cicd`, planned) trigger directly off Git events (a push, a pull request).
-- Model/data versioning tools (DVC, `08-mlops-deployment/03`–`04`, planned) extend the same content-addressing idea to large binary artifacts that don't belong directly in a Git repository.
+- Model/data versioning tools (`08-mlops-deployment/04-model-packaging-versioning`) extend the same content-addressing idea to large binary artifacts that don't belong directly in a Git repository.
 
 ## What's next
 
-`03-testing-ci` (planned) — testing and continuous integration workflows that trigger off the Git commit graph this topic covers.
+`03-testing-ci` — testing and continuous integration workflows that trigger off the Git commit graph this topic covers.

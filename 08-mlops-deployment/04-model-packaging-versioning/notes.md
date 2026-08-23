@@ -69,6 +69,12 @@ for code, just moved to artifacts:
 
 ## Conceptual foundation
 
+This section is titled "Conceptual foundation" rather than "Mathematical
+foundation": model packaging and versioning has no closed-form math to
+derive — the foundational idea here is conceptual (content-addressed
+storage, and the tradeoffs between serialization formats), not
+mathematical.
+
 ### Serialization formats and their tradeoffs
 
 | Format | What it does | Tradeoffs |
