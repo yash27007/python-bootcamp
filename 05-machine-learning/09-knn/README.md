@@ -5,4 +5,5 @@ K-Nearest Neighbors (KNN) is a simple, non-parametric, lazy learning algorithm u
 ## Notes
 
 - Full theory notes: [notes.md](notes.md)
-- Notebook: [knn.ipynb](knn.ipynb)
+- From-scratch NumPy implementation: [knn-from-scratch.ipynb](knn-from-scratch.ipynb)
+- Practical (scikit-learn) notebook: [knn.ipynb](knn.ipynb)
