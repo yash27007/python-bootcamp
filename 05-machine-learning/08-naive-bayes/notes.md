@@ -1,5 +1,14 @@
 # Naïve Bayes
 
+| Topic | Status |
+|-------|--------|
+| Bayes' Theorem | ✅ Complete |
+| The "Naive" Assumption | ✅ Complete |
+| The Decision Rule | ✅ Complete |
+| Variants of Naive Bayes (Gaussian, Multinomial, Bernoulli) | ✅ Complete |
+| Cost Function Formulation | ✅ Complete |
+| Worked Numeric Example | ✅ Complete |
+
 ## Overview
 Naive Bayes is a family of probabilistic machine learning models based on applying **Bayes' Theorem** with a "naive" assumption of conditional independence between every pair of features given the value of the class variable.
 
