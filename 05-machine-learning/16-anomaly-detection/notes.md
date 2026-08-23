@@ -1,499 +1,156 @@
-# Anomaly Detection: A Complete Guide
+# Anomaly Detection
 
-## Big Picture (Simple Summary)
+## 1. Problem
 
-Imagine you are a bank monitoring millions of credit card transactions per day. 99.99% are normal purchases. But a few are fraudulent. You need to automatically flag the suspicious ones — even though you may not know exactly what "fraudulent" looks like, and even if fraudsters constantly change their behavior.
+A bank processes millions of credit card transactions a day. Nearly all of them are legitimate. A tiny fraction are fraudulent — and fraud patterns keep changing, so even a list of "known fraud signatures" goes stale. The task: **find the rare, unusual points when you have few or no labeled examples of what "anomalous" looks like.**
 
-**Anomaly detection** (also called outlier detection) is the task of identifying data points that are significantly different from the majority of the data. These unusual points are called **anomalies**, **outliers**, or **novelties**.
+This is a distinct problem from classification. In classification, "fraud" and "not fraud" are both classes with (ideally) plenty of labeled training examples of each. In anomaly detection, the "anomaly" class is by definition rare, often not represented at all in training data, and frequently not even well-defined in advance — new kinds of fraud, new sensor failure modes, new attack patterns appear that were never seen when the system was built.
 
-Unlike classification, you often don't have labeled "anomaly" examples — the algorithm must learn what "normal" looks like and flag deviations.
+**Anomaly detection** (also called outlier or novelty detection) is the task of identifying data points that are significantly different from the majority, usually by learning what "normal" looks like from mostly- or entirely-unlabeled data and flagging deviations from it.
 
----
+## 2. Intuition
 
-## 1) Types of Anomalies
+Three flavors of "unusual," each needing a different kind of detector:
 
-### 1.1 Point Anomalies
-A single data point is unusual compared to the rest of the data.
+- **Point anomalies** — a single data point is unusual on its own. A $50,000 transaction when everything else is under $500.
+- **Contextual anomalies** — a point is unusual only *given its context*, not globally. 30°C is unremarkable in summer, anomalous in winter; buying 100 ski jackets is normal for a ski shop in November, suspicious in July.
+- **Collective anomalies** — no single point looks wrong, but a *group* of points together does. A string of $9.99 charges is individually unremarkable, but fifty of them back-to-back on one card is a classic card-testing pattern.
 
-**Example:** A transaction of $50,000 when all other transactions are under $500.
+Most of the methods in this note (Isolation Forest, DBSCAN-as-anomaly-detector, LOF) target point anomalies — they ask "is this point far from, or in a much sparser region than, the bulk of the data?" — using different definitions of "far" or "sparse."
 
-### 1.2 Contextual Anomalies (Conditional Anomalies)
-A data point is anomalous in a specific context but not globally.
+## 3. Why simpler approaches fail
 
-**Example:** 30°C temperature is normal in summer but anomalous in winter.  
-**Example:** Buying 100 ski jackets is normal for a ski shop in November, but anomalous in July.
+**Supervised classification needs labeled anomalies to learn from — and anomalies are, by definition, rare, and often unseen at training time.** Even if a bank has some labeled fraud examples, a classifier trained on them learns to recognize the *specific* fraud patterns present in that data. A genuinely new fraud technique, structurally different from anything in the training set, doesn't look like the labeled positive examples the classifier learned from — and a supervised model has no special mechanism for flagging "this doesn't look like the negative examples either," because that was never the objective it was trained against. Worse, extreme class imbalance (fraud might be 0.1% of transactions) means a supervised classifier can often get near-perfect accuracy by simply predicting "normal" every time, technically minimizing its loss while being useless for the actual task.
 
-### 1.3 Collective Anomalies
-A group of data points is anomalous together, even if each point is individually normal.
+What's needed instead is a way to characterize what "normal" looks like directly from the abundant unlabeled (mostly-normal) data, and flag anything that deviates significantly from that characterization — without needing to have seen a labeled example of every possible way to be anomalous.
 
-**Example:** A series of small transactions ($9.99, $9.99, $9.99, ...) — individually normal, but 50 of them in a row is suspicious (card testing).
+## 4. Mathematical foundation
 
----
+### 4.1 Statistical baselines
 
-## 2) Statistical Methods
-
-### 2.1 Z-Score (Standard Score)
-
-For a feature with mean $\mu$ and standard deviation $\sigma$, the Z-score of a data point $x$ is:
+**Z-score.** For a feature with mean $\mu$ and standard deviation $\sigma$, the Z-score of a value $x$ is:
 
 $$z = \frac{x - \mu}{\sigma}$$
 
-**Rule of thumb:** A point is an outlier if $|z| > 3$ (more than 3 standard deviations from the mean).
+Rule of thumb: flag $|z| > 3$. This assumes the feature is roughly normally distributed, and it is univariate — it only looks at one feature at a time. It's also fragile: the outliers themselves inflate $\mu$ and $\sigma$, which can mask exactly the points it's supposed to catch.
 
-**Assumption:** Data follows a **normal (Gaussian) distribution**.
+**Modified Z-score** replaces mean/std with the more outlier-robust median and median absolute deviation (MAD):
 
-**Worked Example:**
+$$\text{Modified } z = \frac{0.6745(x_i - \text{median})}{\text{MAD}}, \qquad \text{MAD} = \text{median}(|x_i - \text{median}|)$$
 
-Heights in a class: mean = 170 cm, std = 10 cm
+Flag $|z| > 3.5$.
 
-| Person | Height | Z-Score | Anomaly? |
-|--------|--------|---------|---------|
-| A | 175 | (175-170)/10 = +0.5 | No |
-| B | 195 | (195-170)/10 = +2.5 | Borderline |
-| C | 140 | (140-170)/10 = **-3.0** | Flagged |
-| D | 225 | (225-170)/10 = **+5.5** | Definitely anomaly |
+**Interquartile range (IQR).** $IQR = Q_3 - Q_1$ (the spread between the 25th and 75th percentiles); flag anything outside $[Q_1 - 1.5\cdot IQR,\ Q_3 + 1.5\cdot IQR]$. Robust to the outliers themselves, since it's built from percentiles rather than mean/std.
 
-**Limitation:** Z-score assumes Gaussian distribution, is sensitive to the outliers themselves (they inflate the mean and std), and only works for univariate data.
+**Mahalanobis distance** extends this to multivariate data, accounting for correlation between features:
 
-**Modified Z-Score (more robust):** Uses median (M) and median absolute deviation (MAD):
+$$D_M(x) = \sqrt{(x-\mu)^T \Sigma^{-1} (x-\mu)}$$
 
-$$\text{Modified } z = \frac{0.6745(x_i - \text{median})}{MAD}$$
+where $\mu$ is the mean vector and $\Sigma$ the covariance matrix. Plain Euclidean distance is dominated by whichever feature has the largest numeric range and ignores correlation between features (a point can look far away along one axis yet be entirely within the normal joint distribution once correlation is accounted for) — $\Sigma^{-1}$ corrects for both. If the data is multivariate Gaussian, $D_M(x)^2$ follows a $\chi^2$ distribution with $p$ degrees of freedom, giving a principled threshold: flag if $D_M(x)^2 > \chi^2_{p,\,0.975}$.
 
-Where $MAD = \text{median}(|x_i - \text{median}|)$. Flag if $|z| > 3.5$.
+### 4.2 Isolation Forest
 
-### 2.2 Interquartile Range (IQR) Method
+Core observation (Liu, Ting & Zhou, 2008): **anomalies are few and different, so they're easier to isolate with random splits than normal points are.** Build many random trees (iTrees), each recursively splitting the data on a random feature at a random threshold; for each point, record the average path length (number of splits) needed to isolate it alone in a leaf, across all trees. An anomaly — sitting apart from the dense bulk of the data — tends to get separated out after only one or two splits, since most random splits will already put it alone; a normal point buried inside a dense cluster needs many more splits to be pried away from its many close neighbors.
 
-The **IQR** is the range between the 25th and 75th percentiles:
-
-$$IQR = Q_3 - Q_1$$
-
-**Outlier bounds:**
-- Lower fence: $Q_1 - 1.5 \times IQR$
-- Upper fence: $Q_3 + 1.5 \times IQR$
-
-Points outside these fences are flagged as outliers.
-
-**Worked Example:**
-
-Salaries (in thousands): [30, 35, 38, 40, 42, 45, 50, 55, 200]
-
-- Q1 = 37, Q3 = 52, IQR = 15
-- Lower fence = 37 - 1.5 × 15 = **14.5**
-- Upper fence = 52 + 1.5 × 15 = **74.5**
-
-Salary of $200k is an outlier (above 74.5).
-
-**Why IQR?** Robust to the outliers themselves (uses percentiles, not mean/std).
-
-```python
-import numpy as np
-
-def iqr_outliers(data):
-    Q1 = np.percentile(data, 25)
-    Q3 = np.percentile(data, 75)
-    IQR = Q3 - Q1
-    lower = Q1 - 1.5 * IQR
-    upper = Q3 + 1.5 * IQR
-    return (data < lower) | (data > upper)
-```
-
-### 2.3 Mahalanobis Distance (Multivariate Outlier Detection)
-
-For multivariate data, Euclidean distance doesn't account for correlations between features. **Mahalanobis distance** fixes this:
-
-$$D_M(x) = \sqrt{(x - \mu)^T \Sigma^{-1} (x - \mu)}$$
-
-Where:
-- $\mu$ = mean vector of the data
-- $\Sigma$ = covariance matrix
-- $\Sigma^{-1}$ = inverse covariance matrix (accounts for correlations and scale)
-
-**Interpretation:** If the data is multivariate Gaussian, $D_M^2$ follows a chi-squared distribution with p degrees of freedom. A point is an outlier if:
-
-$$D_M^2 > \chi^2_{p, 0.975}$$
-
-**Why not just Euclidean distance?** Suppose Feature 1 ranges [0, 1000] and Feature 2 ranges [0, 1]. Euclidean distance is dominated by Feature 1. Also, if features are correlated, a point might look "far" in one dimension but actually be in the normal range of the joint distribution.
-
-```python
-from scipy.spatial.distance import mahalanobis
-from scipy.stats import chi2
-import numpy as np
-
-# Compute robust covariance (less sensitive to outliers)
-from sklearn.covariance import MinCovDet
-mcd = MinCovDet(random_state=42).fit(X)
-
-# Mahalanobis distances
-distances = mcd.mahalanobis(X)
-
-# Threshold: chi-squared distribution
-threshold = chi2.ppf(0.975, df=X.shape[1])
-outliers = distances > threshold
-print(f"Outliers detected: {outliers.sum()} ({100*outliers.mean():.1f}%)")
-```
-
----
-
-## 3) Isolation Forest
-
-### 3.1 The Core Idea
-
-**Isolation Forest** (Liu et al., 2008) is based on a simple observation:
-
-> Anomalies are few and different. Normal points require more splits to isolate; anomalies can be isolated with very few splits.
-
-**Algorithm:**
-1. Build many random **isolation trees** (iTrees)
-2. Each iTree recursively splits the data with random feature + random split value
-3. For each data point, record the average number of splits (path length) needed to isolate it across all trees
-
-**The anomaly score:**
+The anomaly score:
 
 $$s(x, n) = 2^{-\frac{E[h(x)]}{c(n)}}$$
 
-Where:
-- $E[h(x)]$ = average path length (number of splits) to isolate point $x$
-- $c(n)$ = expected path length for n samples (normalization factor): 
-$$c(n) = 2H(n-1) - \frac{2(n-1)}{n}$$
-where $H(i) = \ln(i) + 0.5772$ (Euler-Mascheroni constant)
+where $E[h(x)]$ is the average path length to isolate $x$ across all trees, and $c(n)$ normalizes for tree size:
 
-**Score interpretation:**
-- $s \approx 1$: Very short path → anomaly (easy to isolate)
-- $s \approx 0.5$: Normal points → no clear anomalies
-- $s \ll 0.5$: Very long path → dense, normal region
+$$c(n) = 2H(n-1) - \frac{2(n-1)}{n}, \qquad H(i) = \ln(i) + 0.5772\ (\text{Euler–Mascheroni constant})$$
 
-### 3.2 Visual Intuition
+$s \to 1$ for short average path length (anomaly); $s \to 0.5$ for typical path length (normal, no clear signal either way); $s \ll 0.5$ for long path length (dense, clearly normal region).
 
-Imagine a scatter plot with 100 normal points in a dense cluster and 1 outlier far away.
+### 4.3 Local Outlier Factor (LOF)
 
-**Normal point (in the cluster):** A random split might not separate it from others. You need many, many splits to finally isolate it from the last few neighbors.
+LOF (Breunig et al., 2000) compares a point's *local* density to its neighbors' local density, rather than isolating it globally. Built from a chain of definitions:
 
-**Outlier (far from cluster):** The first random split likely puts it in a partition by itself (or nearly so). Path length ≈ 1–2 splits.
+$$k\text{-dist}(A) = \text{distance from } A \text{ to its } k\text{-th nearest neighbor}$$
 
-The outlier is **naturally easier to isolate** → shorter average path length → higher anomaly score.
+$$\text{reach-dist}_k(A,B) = \max(k\text{-dist}(B),\ d(A,B))$$
 
-### 3.3 Why Isolation Forest is Powerful
+The reachability distance smooths the density estimate by preventing very small point-to-point distances from dominating.
 
-1. **No distance computation** → works in high dimensions (unlike k-NN based methods)
-2. **No density estimation** → avoids curse of dimensionality
-3. **Linear time complexity** $O(N \log N)$
-4. **No assumption about data distribution**
-5. **Handles high-dimensional data** well
+$$\text{lrd}_k(A) = \frac{k}{\sum_{B \in N_k(A)} \text{reach-dist}_k(A,B)}$$
 
-### 3.4 Hyperparameters
+(local reachability density — high lrd means $A$ sits in a dense region).
 
-| Parameter | Description | Default | Typical Range |
-|-----------|-------------|---------|---------------|
-| `n_estimators` | Number of iTrees | 100 | 100–500 |
-| `max_samples` | Training samples per tree | 'auto' (256) | 'auto' or 0.1–1.0 × N |
-| `contamination` | Expected fraction of anomalies | 'auto' | 0.01–0.2 |
-| `max_features` | Features per split | 1.0 | 0.5–1.0 |
+$$\text{LOF}_k(A) = \frac{\sum_{B \in N_k(A)} \text{lrd}_k(B)}{k \cdot \text{lrd}_k(A)} = \frac{\text{average lrd of } A\text{'s neighbors}}{\text{lrd of } A}$$
 
-**Why max_samples=256?** After 256 samples, path lengths saturate — anomalies vs. normal points are already distinguishable. Using all N samples doesn't improve detection but is much slower.
+$\text{LOF} \approx 1$: $A$'s density matches its neighbors' (normal). $\text{LOF} \gg 1$: $A$ is in a markedly sparser region than its neighbors (anomaly). $\text{LOF} < 1$: $A$ is denser than its neighbors (rare; typically still normal, just in a very tight sub-cluster).
 
-### 3.5 Implementation
+### 4.4 DBSCAN as an anomaly detector
 
-```python
-from sklearn.ensemble import IsolationForest
-import numpy as np
-import matplotlib.pyplot as plt
+DBSCAN (full derivation in `15-unsupervised-learning`, §4.3) already produces a built-in outlier label as a side effect of clustering: any point that is neither a core point nor within $\varepsilon$ of one is labeled **noise** ($-1$). Formally, $p$ is noise if $|N_\varepsilon(p)| < \text{min\_samples}$ and $p$ is not within $\varepsilon$ of any core point. Reusing that noise label directly as "anomaly" requires no separate scoring function — a point is flagged simply for failing to belong to any sufficiently dense region.
 
-# Fit Isolation Forest
-clf = IsolationForest(
-    n_estimators=200,
-    max_samples='auto',
-    contamination=0.05,  # Expect 5% outliers
-    random_state=42,
-    n_jobs=-1
-)
-clf.fit(X_train)
+## 5. Algorithm
 
-# Predict: 1 = normal, -1 = anomaly
-predictions = clf.predict(X_test)
-scores = clf.decision_function(X_test)  # More negative = more anomalous
-anomaly_scores = -clf.score_samples(X_test)  # Positive anomaly score (higher = more anomalous)
+**Isolation Forest:** build `n_estimators` random binary trees, each on a random subsample (`max_samples`, default 256 — chosen because path lengths saturate around that many points; more data past that point doesn't sharpen the separation between anomaly and normal path lengths, it just costs more to compute) with random feature/threshold splits at each node; average each point's path length across all trees; convert to the score in §4.2; threshold using the expected `contamination` fraction.
 
-print(f"Anomalies detected: {(predictions == -1).sum()}")
+**LOF:** for each point, find its $k$ nearest neighbors, compute `reach-dist` to each, derive `lrd`, then compare each point's `lrd` to the average `lrd` of its neighbors, per §4.3.
 
-# If you have labels for evaluation
-from sklearn.metrics import classification_report, roc_auc_score
-# Convert: -1 → 1 (anomaly), 1 → 0 (normal)
-y_pred_binary = (predictions == -1).astype(int)
-print(roc_auc_score(y_true, anomaly_scores))
-```
+**DBSCAN-as-detector:** run the DBSCAN clustering algorithm (`15-unsupervised-learning`, §5); every point labeled `-1` is an anomaly.
 
----
+## 6. From-scratch implementation
 
-## 4) Local Outlier Factor (LOF)
+A from-scratch `lof_scratch` implementation (k-distance → reach-dist → lrd → LOF, matching §4.3 term-by-term) is in `03-local-outlier-factor/Local-Outlier-Factor.ipynb`, §7 ("Implementation from Scratch"), validated by comparing its ranking of anomaly scores against `sklearn.neighbors.LocalOutlierFactor`'s on the same data.
 
-### 4.1 Idea
+Isolation Forest and DBSCAN are not reimplemented from scratch here — Isolation Forest's value lies in an ensemble of many random trees over resampled data, which is a straightforward but not conceptually illuminating engineering exercise once the single-tree splitting logic is understood (and decision trees are already implemented from scratch in `06-decision-tree`); DBSCAN's from-scratch implementation lives in `15-unsupervised-learning/03-dbscan-clustering/DBSCAN-Clustering.ipynb` and is reused conceptually here rather than duplicated.
 
-LOF (Breunig et al., 2000) compares the **local density** of a point to the local density of its neighbors. An anomaly is a point that is in a region of much lower density than its neighbors.
+## 7. Practical implementation
 
-**Key concept: reachability distance**
+- `sklearn.ensemble.IsolationForest` implements §4.2/§5 directly — `contamination` sets the expected anomaly fraction used for thresholding, `predict()` returns $\pm 1$ (anomaly/normal), `score_samples()`/`decision_function()` give the continuous score.
+- `sklearn.neighbors.LocalOutlierFactor` implements §4.3 — `novelty=False` (default) is for outlier detection on the fitted data itself; `novelty=True` allows fitting on training data and later calling `predict()` on new points.
+- `sklearn.cluster.DBSCAN` reused as in §4.4 — anomalies are simply the points with `label_ == -1`.
+- Statistical baselines (§4.1) map directly to `numpy`/`scipy` one-liners: percentile-based IQR fences, and `sklearn.covariance.MinCovDet` for a robust covariance estimate feeding `scipy.spatial.distance.mahalanobis` / `scipy.stats.chi2` for the Mahalanobis threshold.
 
-$$\text{reach-dist}_k(A, B) = \max(k\text{-dist}(B), d(A, B))$$
+Two additional production-relevant methods, not derived from scratch above but implemented and mapped to their underlying idea in the notebooks, are worth preserving here since they're genuinely useful alternatives:
 
-Where $k\text{-dist}(B)$ is the distance from B to its $k$-th nearest neighbor.
+- **One-Class SVM** (Schölkopf et al., 2001) learns a boundary in (possibly kernel-transformed) feature space enclosing most of the training data:
+$$\min_{w,\rho,\xi} \tfrac{1}{2}\|w\|^2 + \tfrac{1}{\nu n}\sum_i \xi_i - \rho, \qquad f(x) = \text{sign}(w^T\phi(x) - \rho)$$
+where $\nu \in (0,1)$ upper-bounds the expected outlier fraction and $\xi_i$ are slack variables. Suited to **novelty detection** — training on *only* normal data, with no anomalies present at all, unlike Isolation Forest and LOF which can be run directly on mixed data. Implemented in `01-isolation-forest/Isolation-Forest-Anomaly-Detection.ipynb`, §7. Slow on large datasets relative to Isolation Forest/LOF.
+- **Autoencoder-based detection**: a neural network trained to compress and reconstruct *normal* data; reconstruction error $\|x - \hat{x}\|^2$ is the anomaly score, since a network trained only on normal patterns reconstructs anomalies poorly. Useful for high-dimensional and non-linear structure (e.g. images, sequences with LSTM encoders) where distance-based methods degrade (see §9). Threshold typically set at a high percentile (e.g. 95th) of training reconstruction error. Requires substantially more training data than the other methods here.
 
-This smooths out density estimates by preventing very small distances.
+## 8. Experiment
 
-**Local reachability density of point A:**
+**Hypothesis:** on the same dataset, Isolation Forest, DBSCAN, and LOF will not agree perfectly on which points are anomalous, because each defines "anomalous" differently — Isolation Forest by ease of random-split isolation (a global notion), DBSCAN by failing a hard density threshold, and LOF by relative local density compared to neighbors. In particular, LOF should be better than the other two at flagging a point that sits just outside a *locally dense* sub-cluster embedded in otherwise sparser data, since Isolation Forest and DBSCAN's global/fixed-threshold notions of "normal" don't adapt to locally varying density the way LOF's neighbor-relative comparison does.
 
-$$\text{lrd}_k(A) = \frac{k}{\sum_{B \in N_k(A)} \text{reach-dist}_k(A, B)}$$
+**Setup and result:** `02-dbscan-anomaly-detection/DBSCAN-Anomaly-Detection.ipynb` already runs a side-by-side comparison of DBSCAN against Isolation Forest across several synthetic shapes (blobs, moons, circles, each with injected uniform-random outliers) — §9, "Multi-algorithm comparison on various data shapes" — visualizing which points each method flags. To close the gap to a full three-way comparison, a short additional cell was added to `03-local-outlier-factor/Local-Outlier-Factor.ipynb` that runs Isolation Forest, DBSCAN, and LOF on the same dataset (a dense Gaussian cluster, a sparse Gaussian cluster, and injected far-away uniform outliers — precisely the varying-density scenario the hypothesis targets) and reports AUC-ROC / AUC-PR for all three, plus how many *legitimate* sparse-cluster-boundary points each method incorrectly flags as anomalies. Result: on the specific comparison the hypothesis targeted — false-flagging legitimate points on the sparse cluster's edge — DBSCAN and LOF both correctly left every boundary point unflagged, while Isolation Forest incorrectly flagged one, confirming that a fixed global contamination threshold can misjudge a locally-sparse-but-legitimate region the way LOF's neighbor-relative comparison does not. However, Isolation Forest still posted the *highest overall* AUC-ROC and AUC-PR on this dataset, because it also has near-perfect recall on the far uniform outliers, which dominate the overall score. **Interpretation:** the three methods agree almost completely on the easy, far-away outliers and disagree specifically at the harder boundary the hypothesis targeted — exactly the kind of disagreement predicted, but it shows up as a difference in *where the mistakes are*, not as one method being strictly better than the others overall.
 
-High lrd = A is in a dense region.
+**Limitations:** this is one synthetic setup with one specific density pattern and a small number of true anomalies, so the "1 false positive vs 0" gap is illustrative rather than statistically robust; the ranking of methods is not universal, and on data without meaningfully varying density (uniform clusters), Isolation Forest and DBSCAN can match or beat LOF while running faster.
 
-**LOF score:**
+## 9. Failure modes
 
-$$\text{LOF}_k(A) = \frac{\sum_{B \in N_k(A)} \frac{\text{lrd}_k(B)}{\text{lrd}_k(A)}}{k} = \frac{\text{average lrd of A's neighbors}}{\text{lrd of A}}$$
+- **Contamination-rate sensitivity.** Isolation Forest, LOF, and One-Class SVM all take an expected outlier fraction (`contamination` or $\nu$) as a hyperparameter used to set the decision threshold. If the true anomaly rate in production drifts from what was assumed at training/threshold-setting time, the flagged fraction becomes systematically wrong — too permissive (missed anomalies) or too aggressive (alert fatigue from false positives) — even though the underlying *scores* may still be ranking points correctly.
+- **High-dimensional distance metrics degrade.** LOF, Mahalanobis distance, and (to a lesser extent) DBSCAN all fundamentally depend on distances or local neighborhoods being meaningful. This is the same curse-of-dimensionality failure documented for KNN in `09-knn`'s Failure modes: as dimensionality grows, the ratio between nearest and farthest distances tends toward 1, so "nearest neighbor" and "local density" stop carrying useful information. Isolation Forest is comparatively robust here since it never computes a distance at all — it isolates points via random splits along single features — which is precisely why it's often recommended as the default for high-dimensional tabular data.
+- **DBSCAN's noise-as-anomaly approach requires a single global $\varepsilon$**, which (per `15-unsupervised-learning`, Failure modes) struggles when normal data itself has varying density — some genuinely normal points in a sparse-but-legitimate region get mislabeled as noise/anomalies.
+- **Statistical baselines (Z-score, IQR) are univariate** — they check one feature at a time and cannot catch a point that is anomalous only in combination across features (an otherwise-normal age combined with an otherwise-normal income might be jointly anomalous — e.g. "5 years old with a $500k salary" — while each value alone looks fine).
+- **Collective anomalies are invisible to all point-wise methods above.** None of Isolation Forest, LOF, DBSCAN, or the statistical baselines look at *sequences* or *groups* of points together — a collective anomaly (§2) requires a different formulation (e.g. change-point detection or sequence models) entirely outside this note's scope.
 
-**Interpretation:**
-- LOF ≈ 1 → A has similar density to its neighbors → normal
-- LOF >> 1 → A is much less dense than its neighbors → anomaly
-- LOF < 1 → A is denser than its neighbors (rare, possible in very dense clusters)
+## 10. Real-world usage
 
-### 4.2 LOF vs Isolation Forest
-
-| Aspect | Isolation Forest | LOF |
-|--------|-----------------|-----|
-| Approach | Global (random splits) | Local (density comparison) |
-| Works in high dim | Yes | No (distances meaningless) |
-| Speed | Fast O(N log N) | Slower O(N²) |
-| Detects | Global outliers | Local outliers (relative to neighbors) |
-| Best for | General purpose | When density varies significantly |
-
-**Example where LOF excels:** Dense cluster A (100 points in radius 1) and sparse cluster B (100 points in radius 10). A point slightly outside cluster A might be flagged as anomalous by Isolation Forest (low global density) but is normal relative to cluster A — LOF will correctly judge it as normal.
-
-```python
-from sklearn.neighbors import LocalOutlierFactor
-
-lof = LocalOutlierFactor(
-    n_neighbors=20,
-    contamination=0.05,
-    novelty=False  # Set True for predict() on new data
-)
-predictions = lof.fit_predict(X)
-scores = -lof.negative_outlier_factor_  # Higher = more anomalous
-
-print(f"Anomalies: {(predictions == -1).sum()}")
-```
-
----
-
-## 5) One-Class SVM
-
-### 5.1 Idea
-
-One-Class SVM (Schölkopf et al., 2001) learns a **boundary in feature space** (using the kernel trick) that encloses most of the training data. Points outside this boundary are anomalies.
-
-**Objective:**
-$$\min_{w, \rho, \xi} \frac{1}{2}||w||^2 + \frac{1}{\nu n} \sum_{i=1}^n \xi_i - \rho$$
-
-Where:
-- $\nu \in (0, 1)$: Upper bound on fraction of outliers (hyperparameter)
-- $\rho$: The offset of the hyperplane from origin (threshold)
-- $\xi_i \geq 0$: Slack variables (allow some points to be outside the boundary)
-
-**Decision function:** $f(x) = \text{sign}(w^T \phi(x) - \rho)$
-
-- $f(x) = +1$: Normal
-- $f(x) = -1$: Anomaly
-
-### 5.2 When to Use One-Class SVM
-
-- You have **only normal** training data (no anomaly examples at all — "novelty detection")
-- Data lives in a high-dimensional space but has low intrinsic dimensionality
-- You can use kernel tricks (RBF kernel to detect non-spherical normal regions)
-
-**Limitation:** Very slow on large datasets. Use Isolation Forest or LOF instead for big data.
-
-```python
-from sklearn.svm import OneClassSVM
-from sklearn.preprocessing import StandardScaler
-
-scaler = StandardScaler()
-X_train_scaled = scaler.fit_transform(X_train)
-X_test_scaled = scaler.transform(X_test)
-
-oc_svm = OneClassSVM(nu=0.05, kernel='rbf', gamma='scale')
-oc_svm.fit(X_train_scaled)  # Train on NORMAL data only
-
-predictions = oc_svm.predict(X_test_scaled)  # 1 = normal, -1 = anomaly
-scores = oc_svm.decision_function(X_test_scaled)  # More positive = more normal
-```
-
----
-
-## 6) Autoencoder-Based Anomaly Detection
-
-### 6.1 Idea
-
-An **autoencoder** is a neural network that learns to compress data into a low-dimensional representation and then reconstruct it:
-
-```
-Input X (n features)
-     ↓
-Encoder (compresses to latent dim d << n)
-     ↓
-Latent representation z (bottleneck)
-     ↓
-Decoder (reconstructs from z)
-     ↓
-Reconstruction X̂ (n features)
-```
-
-The autoencoder is trained on **normal data** to minimize **reconstruction error**:
-
-$$L = ||X - \hat{X}||^2 = \sum_{i=1}^n (x_i - \hat{x}_i)^2$$
-
-**Key insight:** After training, the autoencoder is good at reconstructing normal patterns (they fit within the learned latent space). When given an anomaly, the latent space can't represent it well → **high reconstruction error** → anomaly detected.
-
-$$\text{Anomaly Score}(x) = ||x - \text{autoencoder}(x)||^2$$
-
-Set a threshold (e.g., 95th percentile of training reconstruction errors): if score > threshold → anomaly.
-
-### 6.2 Advantages Over Other Methods
-
-| Aspect | Isolation Forest | LOF | Autoencoder |
-|--------|-----------------|-----|------------|
-| High-dim data | Yes | No | **Yes** |
-| Non-linear patterns | No | No | **Yes** |
-| Sequence/temporal | No | No | **Yes (with LSTM)** |
-| Interpretability | Medium | Medium | Low |
-| Requires GPU | No | No | Sometimes |
-| Training data needed | Little | Little | **Much more** |
-
-### 6.3 Implementation (Keras/TensorFlow)
-
-```python
-import numpy as np
-import tensorflow as tf
-from tensorflow import keras
-
-# Build autoencoder
-input_dim = X_train.shape[1]
-encoding_dim = 8  # Bottleneck size
-
-# Encoder
-inputs = keras.Input(shape=(input_dim,))
-x = keras.layers.Dense(64, activation='relu')(inputs)
-x = keras.layers.Dense(32, activation='relu')(x)
-encoded = keras.layers.Dense(encoding_dim, activation='relu')(x)
-
-# Decoder
-x = keras.layers.Dense(32, activation='relu')(encoded)
-x = keras.layers.Dense(64, activation='relu')(x)
-outputs = keras.layers.Dense(input_dim, activation='linear')(x)
-
-autoencoder = keras.Model(inputs, outputs)
-autoencoder.compile(optimizer='adam', loss='mse')
-
-# Train on normal data only
-history = autoencoder.fit(
-    X_train_normal, X_train_normal,
-    epochs=100,
-    batch_size=64,
-    validation_split=0.1,
-    callbacks=[keras.callbacks.EarlyStopping(patience=10, restore_best_weights=True)]
-)
-
-# Compute reconstruction errors
-reconstructions = autoencoder.predict(X_test)
-reconstruction_errors = np.mean((X_test - reconstructions) ** 2, axis=1)
-
-# Set threshold (e.g., 95th percentile on training data)
-train_reconstructions = autoencoder.predict(X_train_normal)
-train_errors = np.mean((X_train_normal - train_reconstructions) ** 2, axis=1)
-threshold = np.percentile(train_errors, 95)
-
-# Classify
-predictions = (reconstruction_errors > threshold).astype(int)
-print(f"Anomalies detected: {predictions.sum()}")
-```
-
----
-
-## 7) Practical Guide: Which Method to Choose?
-
-| Situation | Recommended Method |
-|-----------|-------------------|
-| Large dataset, no labels | **Isolation Forest** (first choice) |
-| Need local density comparison | **LOF** |
-| Only normal training data (novelty detection) | **One-Class SVM** or **Isolation Forest** |
-| Complex patterns, sequence data | **Autoencoder** |
-| Simple univariate checks | **Z-score** or **IQR** |
-| Correlated, multivariate features | **Mahalanobis Distance** |
-| Unknown number of anomaly types | **DBSCAN** (noise points = anomalies) |
-
----
-
-## 8) Evaluating Anomaly Detection Models
-
-Anomaly detection evaluation is tricky because:
-1. Data is extremely imbalanced (few anomalies)
-2. You may have no labeled anomalies at all
-
-### 8.1 With Labeled Data
-
-| Metric | Formula | Use When |
-|--------|---------|---------|
-| **Precision** | TP / (TP + FP) | Cost of false alarms is high |
-| **Recall** | TP / (TP + FN) | Missing anomalies is costly |
-| **F1 Score** | 2·P·R / (P + R) | Balance both |
-| **AUC-ROC** | Area under ROC curve | Want threshold-free evaluation |
-| **AUC-PR** | Area under Precision-Recall curve | **Best for imbalanced data** |
-
-**Why AUC-PR over AUC-ROC for anomaly detection?** When only 1% of data is anomalous, even a bad model can have high AUC-ROC (by getting all normal points right). AUC-PR focuses on the minority class (anomalies) — much more informative.
-
-```python
-from sklearn.metrics import (roc_auc_score, average_precision_score,
-                             classification_report)
-
-# Isolation Forest scores: more negative = more anomalous
-anomaly_scores = -clf.score_samples(X_test)
-
-auc_roc = roc_auc_score(y_true, anomaly_scores)
-auc_pr  = average_precision_score(y_true, anomaly_scores)
-
-print(f"AUC-ROC: {auc_roc:.4f}")
-print(f"AUC-PR: {auc_pr:.4f}")
-
-# Threshold-based evaluation
-threshold = np.percentile(anomaly_scores, 95)
-y_pred = (anomaly_scores > threshold).astype(int)
-print(classification_report(y_true, y_pred, target_names=['Normal', 'Anomaly']))
-```
-
-### 8.2 Without Labels
-
-- **Visual inspection:** Plot anomaly score distribution, manually inspect flagged points
-- **Domain knowledge:** Ask subject matter experts to review flagged examples
-- **Business metrics:** Track fraud loss prevented, system alerts triggered, etc.
-
----
-
-## 9) Real-World Applications
-
-| Domain | Application | What's "Anomalous" |
-|--------|-------------|-------------------|
+| Domain | Application | What's "anomalous" |
+|---|---|---|
 | Finance | Fraud detection | Unusual spending patterns |
-| Cybersecurity | Network intrusion | Unusual traffic patterns |
-| Manufacturing | Predictive maintenance | Sensor readings before failure |
-| Healthcare | Patient monitoring | Vital signs deviating from normal |
+| Cybersecurity | Network intrusion detection | Unusual traffic patterns |
+| Manufacturing | Predictive maintenance | Sensor readings preceding failure |
+| Healthcare | Patient monitoring | Vital signs deviating from baseline |
 | E-commerce | Bot detection | Inhuman browsing speed/patterns |
-| Infrastructure | Server monitoring | Memory/CPU spikes |
+| Infrastructure | Server monitoring | CPU/memory usage spikes |
 
----
+**Choosing a method in practice:** Isolation Forest is a reasonable first choice for large, tabular, high-dimensional data (fast, distribution-free, robust to dimensionality per §9); LOF when local density is known to vary meaningfully across the data; One-Class SVM or Isolation Forest when only normal training data is available (true novelty detection); statistical baselines (Z-score/IQR/Mahalanobis) as fast, interpretable first passes on low-dimensional or well-understood data; DBSCAN when the number/shape of anomaly clusters is itself unknown and clustering the data is independently useful.
 
-## Summary: The 5 Key Takeaways
+**Evaluation** is complicated by extreme class imbalance — even a poor model can post a deceptively high accuracy or AUC-ROC by getting the overwhelming majority-normal class right. **AUC-PR (area under the precision-recall curve)** is the preferred metric here specifically because it focuses on the minority (anomaly) class rather than being dominated by the abundant normal class the way AUC-ROC and accuracy both are. When ground truth is entirely unavailable, evaluation falls back to visual inspection of the score distribution, domain-expert review of flagged points, and tracked business outcomes (fraud loss prevented, alert volume).
 
-1. **Anomaly detection ≠ classification** — you typically train only on normal data (or without any labels) and flag anything that deviates significantly.
+## 11. Mental model
 
-2. **Isolation Forest** is the best default: fast, scalable, distribution-free, and works well in high dimensions — start with it for any tabular dataset.
+**Anomaly detection is not classification with a rare class — it's "learn what normal looks like, and measure how far a point is from that, without ever needing a labeled example of every way to be abnormal."** Isolation Forest measures how easy a point is to isolate at random; LOF measures how much sparser a point's neighborhood is than its neighbors' neighborhoods; DBSCAN just calls anything outside a dense region noise. All three encode the same intuition — normal points are hard to tell apart from each other, anomalies aren't — through entirely different mechanics.
 
-3. **Statistical methods (Z-score, IQR, Mahalanobis)** are powerful baselines for low-dimensional, well-distributed data — always try them first.
+## 12. Questions to think about
 
-4. **Threshold choice matters**: use domain knowledge to balance false positives (alert fatigue) vs false negatives (missed anomalies). Use precision-recall curves, not just a fixed score cutoff.
-
-5. **AUC-PR is the right metric** for anomaly detection evaluation, not accuracy or AUC-ROC — the extreme class imbalance makes precision-recall far more informative.
+1. Isolation Forest's anomaly score never computes a pairwise distance, while LOF is built entirely out of distances and neighbor counts. Given the curse-of-dimensionality argument in `09-knn`, why does that structural difference predict which method degrades faster as feature count grows?
+2. Why does a fixed `contamination` parameter (used by Isolation Forest, LOF, and One-Class SVM to set a threshold) create a specific, nameable failure mode in production that a purely rank-based evaluation (like AUC-PR) would not reveal during offline testing?
+3. LOF's local reachability density compares a point to its *neighbors'* densities, not to the dataset's overall density. Construct a scenario (conceptually) where this local comparison causes LOF to *miss* an anomaly that Isolation Forest would catch easily.
+4. DBSCAN's noise label requires no separate "anomaly score" at all — a point is either noise or it isn't. What capability does that binary approach lose compared to a continuous anomaly score (like Isolation Forest's or LOF's), and why might that matter operationally (e.g. when choosing how many alerts a team can review per day)?
+5. Why is a supervised classifier trained on 99.9% normal / 0.1% fraud data, evaluated only on accuracy, an almost meaningless model regardless of how sophisticated the classifier is — and why does AUC-PR expose that meaninglessness while AUC-ROC can still look deceptively reasonable?

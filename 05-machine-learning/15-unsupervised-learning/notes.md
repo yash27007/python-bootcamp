@@ -1,634 +1,200 @@
-# Unsupervised Learning: A Complete Guide
+# Unsupervised Learning: Clustering
 
-## Big Picture (Simple Summary)
+## 1. Problem
 
-In supervised learning, you have a teacher — labeled data tells the model what is right and wrong. In **unsupervised learning**, there are no labels. The algorithm must discover hidden structure, patterns, and groupings on its own. It's like handing someone thousands of photographs with no captions and asking them to organize them into groups.
+Most of the data that exists has no labels. Nobody sat down and tagged every customer transaction as "fraud/not fraud," every user session as "churner/loyal," or every gene-expression profile as "cancer subtype A/B/C." Yet there is often real structure hiding in that unlabeled data — natural groups of similar points, dense regions separated by sparse ones, redundant or correlated dimensions.
 
-The two main tasks are:
-1. **Clustering** — group similar things together (K-Means, DBSCAN, Hierarchical)
-2. **Dimensionality Reduction** — compress data into fewer dimensions while preserving structure (PCA, t-SNE, UMAP)
+**Unsupervised learning** is the task of finding that structure without being told what to look for. There is no $y$. Given only a matrix of feature vectors $X \in \mathbb{R}^{N \times p}$, the goal is to discover groupings, densities, or a lower-dimensional description of the data on its own terms.
 
----
+This note covers **clustering** — partitioning data into groups of similar points: K-Means, Hierarchical Clustering, and DBSCAN, plus how to evaluate a clustering with no ground truth (Silhouette Analysis). Dimensionality reduction (PCA) is covered separately in `18-pca`, since it answers a different question ("which directions matter?" rather than "which group do you belong to?") — but the underlying problem (no labels, structure must be discovered) is the same, and PCA is frequently used as a preprocessing step before clustering high-dimensional data.
 
-## Part 1: Clustering
+## 2. Intuition
 
----
+Imagine handing someone a box of thousands of unlabeled photographs and asking them to organize it. With no captions telling them "this is a dog," "this is a beach," they still manage to sort photos into piles — beach photos together, dog photos together, blurry photos in their own pile — purely by noticing which photos *look like* which other photos. Nobody supervised the sorting; the structure came from similarity itself.
 
-## 2) K-Means Clustering
+That's the entire idea behind clustering: define a notion of "similar" (usually distance in feature space) and group points so that within-group similarity is high and between-group similarity is low.
 
-### 2.1 The Core Idea
+Three different ways to formalize "similar":
+- **K-Means**: a point belongs with whichever group has the closest *center*. Groups are defined by their centroid.
+- **Hierarchical clustering**: don't commit to one grouping — build the entire family tree of groupings, from every point alone up to one giant cluster, and let the analyst pick a cut height afterward.
+- **DBSCAN**: a point belongs with a group if it sits in a dense neighborhood connected to other dense neighborhoods, regardless of the group's overall shape. No centroid required.
 
-K-Means partitions N data points into K clusters by minimizing the total **within-cluster sum of squares (WCSS)**, also called **inertia**:
+## 3. Why simpler approaches fail
 
-$$J = \sum_{k=1}^K \sum_{x_i \in C_k} ||x_i - \mu_k||^2$$
+Supervised methods (logistic regression, decision trees, gradient boosting, ...) all work the same way at bottom: define a loss function that measures the gap between a prediction and the true label $y_i$, then minimize that loss. Every piece of that machinery — cross-entropy, squared error, information gain — is a function of $(\hat{y}_i, y_i)$.
 
-Where:
-- $C_k$ = set of points in cluster k
-- $\mu_k$ = centroid (mean) of cluster k
-- $||x_i - \mu_k||^2$ = squared Euclidean distance from point to centroid
+**With no labels, there is nothing to optimize against.** There is no "ground truth" to compare a candidate grouping to, so a supervised loss simply cannot be written down. This is not a matter of a supervised method performing poorly on unlabeled data — it's a category error; supervised methods have no defined objective at all without $y$.
 
-**Goal:** Find cluster assignments and centroids that minimize J.
+Unsupervised methods sidestep this by defining a *self-referential* objective computed purely from $X$: how tightly grouped are the points assigned to each cluster ($K$-Means's within-cluster sum of squares), how far apart are two groups before they're allowed to merge (hierarchical linkage), how connected is a dense region (DBSCAN's density-reachability). The absence of $y$ is exactly why these objectives had to be invented — they are what supervised learning did not need.
 
-### 2.2 The Algorithm (Lloyd's Algorithm)
+A second, related failure: even naive heuristics like "just eyeball scatter plots and draw circles around groups" break down past 2–3 dimensions, and break down with any real number of points. Clustering algorithms replace human eyeballing with an explicit, repeatable mathematical criterion.
 
+## 4. Mathematical foundation
+
+### 4.1 K-Means: minimizing within-cluster sum of squares
+
+K-Means partitions $N$ points into $K$ clusters by minimizing the **within-cluster sum of squares (WCSS)**, also called **inertia**:
+
+$$J(\{C_k\}, \{\mu_k\}) = \sum_{k=1}^K \sum_{x_i \in C_k} \|x_i - \mu_k\|^2$$
+
+where $C_k$ is the set of points assigned to cluster $k$, and $\mu_k$ is that cluster's centroid (mean).
+
+$J$ depends on two things simultaneously: which points are assigned to which cluster ($\{C_k\}$), and where each cluster's centroid sits ($\{\mu_k\}$). Jointly minimizing over both is combinatorially hard (choosing an optimal partition of $N$ points into $K$ groups is NP-hard). K-Means instead uses **alternating minimization**: fix one set of variables, optimize the other exactly, then swap and repeat.
+
+**Step A — fix centroids, optimize assignments.** If $\{\mu_k\}$ is fixed, $J$ decomposes into an independent term per point:
+
+$$J = \sum_{i=1}^N \|x_i - \mu_{c_i}\|^2$$
+
+Each point's contribution depends only on which cluster it's assigned to. The minimum over $c_i$ for a fixed $x_i$ is achieved by assigning $x_i$ to whichever centroid is nearest:
+
+$$c_i = \arg\min_k \|x_i - \mu_k\|^2$$
+
+This is exact and trivial — no iteration needed once centroids are fixed.
+
+**Step B — fix assignments, optimize centroids.** If $\{C_k\}$ is fixed, $J$ decomposes into one independent sub-problem per cluster:
+
+$$J_k(\mu_k) = \sum_{x_i \in C_k} \|x_i - \mu_k\|^2$$
+
+This is a sum of squared distances to a single point $\mu_k$ — a classic least-squares problem. Take the gradient and set it to zero:
+
+$$\nabla_{\mu_k} J_k = -2\sum_{x_i \in C_k} (x_i - \mu_k) = 0 \implies \mu_k = \frac{1}{|C_k|}\sum_{x_i \in C_k} x_i$$
+
+The minimizer is exactly the mean of the assigned points — which is where the name "K-**Means**" comes from.
+
+**Why alternating minimization converges.** Each step (A or B) can only decrease $J$ or leave it unchanged — never increase it, because each step solves its sub-problem exactly. $J \geq 0$ is bounded below, and the number of possible distinct partitions of $N$ points into $K$ groups is finite, so the sequence of $J$ values is non-increasing and bounded below: it must converge in a finite number of steps (in practice, it stops as soon as no point changes cluster). This guarantees convergence to *a* local minimum — not necessarily the global one, since a different starting point can lead the alternating process into a different stable configuration. See §9 for what this means practically.
+
+### 4.2 Hierarchical clustering: linkage criteria
+
+Instead of one flat partition, agglomerative hierarchical clustering starts with $N$ singleton clusters and repeatedly merges the two closest clusters until one cluster remains, recording the whole merge history as a tree. "Closest" between two *clusters* (as opposed to two points) needs its own definition — this is the **linkage criterion**:
+
+| Linkage | Distance between clusters $A$, $B$ | Effect |
+|---|---|---|
+| **Single** | $\min_{a\in A,\, b\in B} d(a,b)$ | Chains together nearest neighbors; tends to produce long, straggly clusters |
+| **Complete** | $\max_{a\in A,\, b\in B} d(a,b)$ | Merges only when *every* pair is close; produces compact, roughly equal-sized clusters |
+| **Average** | $\frac{1}{|A||B|}\sum_{a\in A}\sum_{b\in B} d(a,b)$ | A compromise between single and complete |
+| **Ward** | The increase in total WCSS ($J$ from §4.1) caused by merging $A$ and $B$ | Directly minimizes the same objective K-Means minimizes; the most commonly used default |
+
+Ward's linkage merges whichever pair of clusters causes the **smallest increase in inertia** — it is, in effect, greedily building toward the same objective K-Means optimizes, but via bottom-up merges instead of alternating minimization, and without committing to a fixed $K$ in advance.
+
+### 4.3 DBSCAN: density-reachability
+
+DBSCAN defines a cluster not by a centroid or a merge order, but by density connectivity, using two hyperparameters: a neighborhood radius $\varepsilon$ and a minimum neighbor count `min_samples`.
+
+- **Core point**: a point with at least `min_samples` points (including itself) within radius $\varepsilon$.
+- **Border point**: not a core point itself, but lies within $\varepsilon$ of some core point.
+- **Noise point**: neither core nor border — an outlier, labeled $-1$.
+
+**Directly density-reachable**: point $B$ is directly density-reachable from $A$ if $A$ is a core point and $B$ lies within distance $\varepsilon$ of $A$.
+
+**Density-reachable**: $B$ is density-reachable from $A$ if there exists a chain $A = p_1, p_2, \dots, p_n = B$ where each $p_{i+1}$ is directly density-reachable from $p_i$. This is transitive closure over "directly density-reachable" — it lets a cluster snake through an arbitrarily shaped dense region, one core point's neighborhood at a time.
+
+**A cluster** is a maximal set of points that are mutually density-connected through this chain of core points. Because this definition never assumes a centroid or a convex shape, DBSCAN can discover clusters of arbitrary geometry — crescents, rings, nested shapes — that K-Means and (to a lesser extent) hierarchical clustering cannot.
+
+## 5. Algorithm
+
+**K-Means (Lloyd's algorithm):**
 ```
-1. Choose K (number of clusters)
-2. Initialize K centroids (randomly or with K-Means++)
-3. REPEAT until convergence:
-   a. Assignment step: Assign each point to its nearest centroid
-      for each point xᵢ: cᵢ = argmin_k ||xᵢ - μk||²
-   b. Update step: Move each centroid to the mean of its assigned points
-      μk = (1/|Ck|) Σ_{xᵢ ∈ Ck} xᵢ
-4. STOP when assignments don't change (convergence)
+1. Choose K.
+2. Initialize K centroids (random, or K-Means++ — see below).
+3. REPEAT:
+   a. Assignment step: for each point x_i, c_i = argmin_k ||x_i - mu_k||^2
+   b. Update step: for each cluster k, mu_k = mean of points assigned to k
+   UNTIL assignments stop changing (or centroid movement < tol)
 ```
+This is exactly the alternating minimization of §4.1, steps A and B, repeated to convergence.
 
-**The algorithm always converges** (J can only decrease or stay the same each iteration), but not necessarily to the **global** optimum — it may find a local minimum.
-
-### 2.3 K-Means++ Initialization
-
-Random initialization often leads to poor local minima. **K-Means++** (Arthur & Vassilvitskii, 2007) fixes this with a smarter initialization:
-
-1. Choose the first centroid $\mu_1$ uniformly at random from the data
-2. For each subsequent centroid $\mu_k$:
-   - For each data point $x_i$, compute $d(x_i)^2$ = squared distance to the nearest already-chosen centroid
-   - Choose next centroid with probability proportional to $d(x_i)^2$
-   - Points farther from existing centroids are more likely to be chosen as new centroids
-3. Continue until K centroids are chosen
-
-**Effect:** Centers are spread out → much better starting positions → faster convergence → better solutions.
-
-In scikit-learn, `init='k-means++'` is the default.
-
-### 2.4 Choosing K — The Elbow Method
-
-Since K is a hyperparameter, you need to select it. The **elbow method** plots inertia vs K:
-
-$$\text{For K = 1, 2, ..., 15: compute inertia}$$
-
-The "elbow" in the curve (where inertia stops decreasing sharply) suggests the optimal K.
-
-**Example:**
-| K | Inertia |
-|---|---------|
-| 1 | 10,000 |
-| 2 | 5,000 |
-| 3 | 2,500 |
-| 4 | 1,800 |
-| 5 | 1,600 |
-| 6 | 1,550 |
-| 7 | 1,530 |
-
-Elbow at K=4 or K=5 (inertia stops decreasing sharply after that).
-
-**Silhouette Score** (more reliable than elbow):
-
-For each point $i$, the silhouette score measures how well it fits its cluster compared to neighboring clusters:
-
-$$s(i) = \frac{b(i) - a(i)}{\max(a(i), b(i))}$$
-
-Where:
-- $a(i)$ = average distance from point $i$ to other points in its own cluster (cohesion)
-- $b(i)$ = average distance from point $i$ to points in the nearest other cluster (separation)
-
-$s(i) \in [-1, 1]$:
-- Near +1 → well clustered
-- Near 0 → on border between clusters
-- Near -1 → probably in the wrong cluster
-
-**Average silhouette score** across all points: Higher is better. Choose K that maximizes this.
-
-```python
-from sklearn.metrics import silhouette_score
-
-scores = []
-for k in range(2, 15):
-    km = KMeans(n_clusters=k, random_state=42)
-    labels = km.fit_predict(X)
-    scores.append(silhouette_score(X, labels))
-
-# Plot scores
-plt.plot(range(2, 15), scores, marker='o')
-plt.xlabel('K')
-plt.ylabel('Silhouette Score')
-plt.title('Silhouette Analysis for Optimal K')
-plt.show()
+**Agglomerative hierarchical clustering:**
 ```
-
-### 2.5 Limitations of K-Means
-
-| Limitation | Description | Solution |
-|-----------|-------------|---------|
-| Must specify K | Don't know K in advance | Use elbow/silhouette; try DBSCAN |
-| Assumes spherical clusters | Fails on elongated, non-convex shapes | Use DBSCAN or GMM |
-| Sensitive to scale | Features in larger ranges dominate | **Always standardize features!** |
-| Sensitive to outliers | Outliers pull centroids toward them | Use K-Medoids or DBSCAN |
-| Local minima | Random initialization matters | Use K-Means++, run multiple times |
-
-### 2.6 Implementation
-
-```python
-from sklearn.cluster import KMeans
-from sklearn.preprocessing import StandardScaler
-import matplotlib.pyplot as plt
-import numpy as np
-
-# Always scale first!
-scaler = StandardScaler()
-X_scaled = scaler.fit_transform(X)
-
-# Elbow method
-inertias = []
-K_range = range(1, 16)
-for k in K_range:
-    km = KMeans(n_clusters=k, init='k-means++', n_init=10, random_state=42)
-    km.fit(X_scaled)
-    inertias.append(km.inertia_)
-
-plt.figure(figsize=(10, 4))
-plt.subplot(1, 2, 1)
-plt.plot(K_range, inertias, marker='o')
-plt.xlabel('K')
-plt.ylabel('Inertia')
-plt.title('Elbow Method')
-
-# Silhouette analysis
-from sklearn.metrics import silhouette_score
-sil_scores = []
-for k in range(2, 16):
-    km = KMeans(n_clusters=k, init='k-means++', n_init=10, random_state=42)
-    labels = km.fit_predict(X_scaled)
-    sil_scores.append(silhouette_score(X_scaled, labels))
-
-plt.subplot(1, 2, 2)
-plt.plot(range(2, 16), sil_scores, marker='o', color='orange')
-plt.xlabel('K')
-plt.ylabel('Silhouette Score')
-plt.title('Silhouette Analysis')
-plt.tight_layout()
-plt.show()
-
-# Fit final model
-optimal_k = 4
-final_model = KMeans(n_clusters=optimal_k, init='k-means++', n_init=10, random_state=42)
-labels = final_model.fit_predict(X_scaled)
-print(f"Cluster sizes: {np.bincount(labels)}")
+1. Start: N clusters, each a single point.
+2. REPEAT until 1 cluster remains:
+   a. Find the two closest clusters under the chosen linkage.
+   b. Merge them; record the merge height (distance) in the dendrogram.
+3. Cut the resulting tree at any height to obtain any number of flat clusters K.
 ```
+Reading a dendrogram to choose $K$: look for the largest vertical gap between merge heights (the longest line segment the cut doesn't cross); a horizontal cut through that gap crosses as many lines as the natural number of clusters.
 
----
-
-## 3) Hierarchical Clustering
-
-### 3.1 The Idea
-
-Instead of specifying K upfront, hierarchical clustering builds a **tree of clusters (dendrogram)** that shows all possible groupings from N individual points to 1 big cluster.
-
-You can then "cut" the tree at any height to get any number of clusters K.
-
-### 3.2 Agglomerative (Bottom-Up) Approach
-
-**Start:** N clusters, each containing one data point.
-
-**Repeat until 1 cluster remains:**
-1. Find the two closest clusters (using a **linkage criterion**)
-2. Merge them into one cluster
-3. Update the distance matrix
-
-### 3.3 Linkage Criteria (How to Measure Distance Between Clusters)
-
-| Linkage | Distance Between Clusters A and B | Characteristic |
-|---------|----------------------------------|----------------|
-| **Single** | $\min_{a \in A, b \in B} d(a, b)$ (minimum distance) | Tends to create long, chained clusters |
-| **Complete** | $\max_{a \in A, b \in B} d(a, b)$ (maximum distance) | Creates compact, roughly equal clusters |
-| **Average** | $\frac{1}{|A||B|} \sum_{a \in A} \sum_{b \in B} d(a, b)$ (mean distance) | Good compromise |
-| **Ward** | Minimizes the increase in total WCSS when merging | Most popular; creates compact clusters |
-
-**Ward's linkage** merges clusters that result in the **smallest increase in inertia** — similar to K-Means objective.
-
-### 3.4 The Dendrogram
-
-The dendrogram shows the merge history:
-- X-axis: data points
-- Y-axis: distance at which clusters were merged (height)
-- Higher merge height = less similar clusters
-
-**How to choose K from a dendrogram:** Look for the largest vertical gap (longest lines that don't cross a horizontal cut). Draw a horizontal line through the gap → the number of lines it crosses = K.
-
-```python
-from scipy.cluster.hierarchy import dendrogram, linkage, fcluster
-from sklearn.preprocessing import StandardScaler
-import matplotlib.pyplot as plt
-
-scaler = StandardScaler()
-X_scaled = scaler.fit_transform(X)
-
-# Build the linkage matrix
-Z = linkage(X_scaled, method='ward')
-
-# Plot dendrogram
-plt.figure(figsize=(15, 6))
-dendrogram(
-    Z,
-    truncate_mode='lastp',  # Show only last p merged clusters
-    p=30,
-    leaf_rotation=90,
-    leaf_font_size=8,
-    show_contracted=True
-)
-plt.title('Hierarchical Clustering Dendrogram (Ward Linkage)')
-plt.xlabel('Cluster / Sample Index')
-plt.ylabel('Distance')
-plt.axhline(y=6, color='r', linestyle='--', label='Cut at distance=6')
-plt.legend()
-plt.show()
-
-# Get flat cluster labels by cutting at distance or n_clusters
-labels = fcluster(Z, t=4, criterion='maxclust')  # t=4 clusters
-# OR
-labels = fcluster(Z, t=6.0, criterion='distance')  # cut at distance=6
+**DBSCAN:**
 ```
-
-### 3.5 K-Means vs Hierarchical
-
-| Aspect | K-Means | Hierarchical |
-|--------|---------|-------------|
-| K required? | Yes | No (choose after) |
-| Scales to large N? | Yes | No (O(N²) memory) |
-| Deterministic? | No (random init) | Yes |
-| Result | Flat partition | Full hierarchy (dendrogram) |
-| Cluster shape | Spherical only | Flexible |
-| Outlier handling | Poor | Better |
-
----
-
-## 4) DBSCAN — Density-Based Spatial Clustering
-
-### 4.1 Motivation
-
-K-Means and hierarchical clustering fail when:
-- Clusters have irregular shapes
-- Clusters are nested or have varying density
-- There are noise/outlier points
-
-**DBSCAN (Density-Based Spatial Clustering of Applications with Noise)** fixes this.
-
-### 4.2 Key Concepts
-
-DBSCAN has two hyperparameters:
-- **ε (eps):** The radius of a neighborhood around each point
-- **min_samples (MinPts):** Minimum number of points required in a ε-neighborhood for a point to be a "core point"
-
-**Three types of points:**
-
-1. **Core point:** Has at least `min_samples` points within radius ε (including itself)
-2. **Border point:** Within ε of a core point, but has fewer than `min_samples` neighbors itself
-3. **Noise point:** Neither core nor border — it's an outlier, labeled as -1
-
-**Directly density-reachable:** Point B is directly density-reachable from A if:
-- A is a core point
-- B is within distance ε of A
-
-**Density-reachable:** B is density-reachable from A if there exists a chain of points $A = p_1, p_2, \dots, p_n = B$ where each $p_{i+1}$ is directly density-reachable from $p_i$.
-
-**A cluster** = all points mutually density-connected (reachable through core points).
-
-### 4.3 The Algorithm
-
-```
-Mark all points as unvisited.
-
+Mark all points unvisited.
 FOR each unvisited point P:
-    Mark P as visited
-    Find all neighbors within radius ε: N(P) = {q : dist(P,q) ≤ ε}
-    
+    Mark P visited.
+    N(P) = points within radius eps of P.
     IF |N(P)| < min_samples:
-        Mark P as NOISE (potential outlier, may be reclassified later)
+        Mark P as NOISE (may be reclassified as a border point later).
     ELSE:
-        Start new cluster C
-        Add P to C
+        Start new cluster C; add P to C.
         For each point Q in N(P):
-            If Q is NOISE → add to cluster C (reclassify as border point)
-            If Q is unvisited:
-                Mark Q as visited
-                Find Q's neighbors N(Q)
-                If |N(Q)| >= min_samples: add all of N(Q) to the seed set
-                Add Q to cluster C
+            IF Q was NOISE: reclassify Q as a border point of C.
+            IF Q is unvisited:
+                Mark Q visited; compute N(Q).
+                IF |N(Q)| >= min_samples: add N(Q) to the seed set to expand C.
+                Add Q to C.
 ```
 
-### 4.4 How to Choose ε and min_samples
+**K-Means++ initialization** (briefly — full weight given in §9, since it exists specifically to fix K-Means's initialization sensitivity): instead of picking all $K$ initial centroids uniformly at random, pick the first centroid uniformly at random, then repeatedly pick the next centroid with probability proportional to its squared distance from the nearest centroid already chosen. This spreads the initial centroids out across the data rather than risking two of them landing close together, which empirically produces faster convergence and better final solutions. `sklearn`'s `KMeans` defaults to `init='k-means++'`.
 
-**min_samples:** Rule of thumb = 2 × number of features (or at least 3)
+## 6. From-scratch implementation
 
-**ε (eps):** Use the **k-distance plot**:
-1. For each point, compute the distance to its $k$-th nearest neighbor (use k = min_samples - 1)
-2. Sort these distances in ascending order
-3. Plot them — the "elbow" suggests a good ε
+Implemented as `KMeansScratch` in `01-kmeans-clustering/KMeans-Clustering.ipynb` (cell 12) — a full Lloyd's-algorithm loop (assignment step / update step, alternating until centroid movement falls below tolerance, with multiple random restarts to reduce the local-minimum risk described in §9), validated against `sklearn.cluster.KMeans` on the same data (inertia and centroids match closely).
 
-```python
-from sklearn.neighbors import NearestNeighbors
-import numpy as np
-import matplotlib.pyplot as plt
+To make the *iteration-by-iteration convergence* visible (rather than only the final converged state), a second, minimal implementation was added to the same notebook: a bare assign→recompute loop on a toy 2D three-blob dataset that records the centroid positions and inertia after every iteration, then plots the cluster assignment at several snapshots (initialization, iteration 1, iteration 2, convergence) side by side with inertia vs. iteration number. The plot makes concrete what §4.1 proves algebraically: $J$ drops sharply in the first iteration or two and then flattens out as assignments stabilize.
 
-# k-distance plot
-k = 5  # min_samples - 1
-nn = NearestNeighbors(n_neighbors=k)
-nn.fit(X_scaled)
-distances, _ = nn.kneighbors(X_scaled)
-distances = np.sort(distances[:, k-1], axis=0)
+## 7. Practical implementation
 
-plt.plot(distances)
-plt.xlabel('Points sorted by distance')
-plt.ylabel(f'{k}th nearest neighbor distance')
-plt.title('k-distance plot — Elbow suggests ε')
-plt.show()
-```
+The production version in all four notebooks is `sklearn.cluster.KMeans`, `scipy.cluster.hierarchy.linkage`/`dendrogram`/`fcluster`, and `sklearn.cluster.DBSCAN`. Each maps directly back to §5:
 
-### 4.5 DBSCAN vs K-Means
+- `KMeans(n_clusters=K, init='k-means++', n_init=10)` runs Lloyd's algorithm (§5) `n_init` times with different K-Means++ initializations and keeps the run with lowest inertia — exactly the from-scratch loop in §6, with the K-Means++ initialization from §5 and multiple restarts baked in.
+- `linkage(X, method='ward')` builds the merge tree bottom-up using Ward's linkage (§4.2); `dendrogram()` visualizes it; `fcluster(Z, t=K, criterion='maxclust')` cuts it at a given number of clusters.
+- `DBSCAN(eps=..., min_samples=...)` implements the core/border/noise algorithm of §5 directly.
 
-| Aspect | K-Means | DBSCAN |
-|--------|---------|--------|
-| K needed? | Yes | No |
-| Cluster shape | Spherical | Any shape |
-| Outlier handling | None | Explicitly identifies noise |
-| Scales to large data | Yes (fast) | Can be slow (O(N log N) with tree) |
-| Cluster density | Uniform assumed | Variable density struggle |
-| Deterministic? | No | Yes |
+**Always scale features first** (`StandardScaler`) for all three algorithms — each depends on Euclidean distance, and any feature with a larger numeric range will dominate the distance calculation regardless of its actual importance.
 
-```python
-from sklearn.cluster import DBSCAN
-from sklearn.preprocessing import StandardScaler
+Choosing hyperparameters: the elbow method plots inertia vs. $K$ for K-Means (looking for where the inertia-vs-$K$ curve stops dropping sharply); DBSCAN's $\varepsilon$ is chosen from a **k-distance plot** — sort each point's distance to its $k$-th nearest neighbor (with $k \approx$ `min_samples` $- 1$) and look for the elbow, since points beyond that distance are typically noise. `min_samples` has a rule of thumb of roughly $2\times$ the number of features (at least 3).
 
-scaler = StandardScaler()
-X_scaled = scaler.fit_transform(X)
+Full worked example, elbow-method table, and k-distance-plot code live in the four topic notebooks:
+- `01-kmeans-clustering/KMeans-Clustering.ipynb`
+- `02-hierarchical-clustering/Hierarchical-Clustering.ipynb`
+- `03-dbscan-clustering/DBSCAN-Clustering.ipynb`
+- `04-silhouette-analysis/Silhouette-Analysis.ipynb`
 
-dbscan = DBSCAN(eps=0.5, min_samples=5)
-labels = dbscan.fit_predict(X_scaled)
+## 8. Experiment
 
-n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
-n_noise = list(labels).count(-1)
+**Hypothesis:** if synthetic data is generated with a known number of well-separated blob clusters (say, 4), the silhouette score computed for candidate $K \in \{2, \dots, 15\}$ should peak at (or very near) $K=4$ — the true number of clusters — since the silhouette score directly measures how well-separated and internally cohesive a candidate clustering is.
 
-print(f"Number of clusters: {n_clusters}")
-print(f"Number of noise points: {n_noise} ({100*n_noise/len(labels):.1f}%)")
-```
+$$s(i) = \frac{b(i) - a(i)}{\max(a(i), b(i))}, \qquad s(i) \in [-1, 1]$$
 
----
+where $a(i)$ is the mean distance from point $i$ to other points in its own cluster (cohesion — lower is tighter) and $b(i)$ is the mean distance from $i$ to points in the nearest *other* cluster (separation — higher is more distinct). Averaging $s(i)$ over all points gives one number per candidate $K$; the $K$ that maximizes the average silhouette is the recommended choice.
 
-## Part 2: Dimensionality Reduction
+This experiment — generate synthetic blobs with a known ground-truth $K$, sweep $K$ from 2 to 15, plot the average silhouette score against $K$, and check whether the peak lands on the true $K$ — is exactly what `04-silhouette-analysis/Silhouette-Analysis.ipynb` runs. **Result:** the silhouette curve peaks at the true number of generating clusters on the synthetic dataset, confirming the hypothesis; on messier or overlapping clusters the peak becomes less sharp, and silhouette is noted there as *more reliable than the elbow method* (which can show an ambiguous "elbow" even on clean data) because it has a bounded, interpretable range and directly rewards separation rather than just penalizing spread. **Limitation:** silhouette score itself assumes roughly convex clusters measured by Euclidean distance — on DBSCAN-style arbitrarily-shaped clusters it can be misleading, since it still measures compactness/separation geometrically rather than density-connectivity.
 
----
+## 9. Failure modes
 
-## 5) Principal Component Analysis (PCA)
+- **K-Means assumes spherical, similarly-sized clusters.** Because the objective is squared Euclidean distance to a single centroid, K-Means implicitly models each cluster as an isotropic Gaussian blob. Elongated, non-convex, or very differently-sized clusters get sliced incorrectly (e.g. two crescent-moon clusters get cut straight through). DBSCAN or Gaussian Mixture Models handle this better.
+- **K requires being chosen in advance**, and K-Means has no internal signal for "this K is wrong" — the elbow method and silhouette score (§8) are external diagnostics bolted on afterward, not something the algorithm reports itself. Hierarchical clustering sidesteps this by deferring the choice to after the tree is built; DBSCAN sidesteps it entirely by inferring the number of clusters from density.
+- **Sensitive to initialization.** Because Lloyd's algorithm only guarantees convergence to *a* local minimum of $J$ (§4.1), different random starting centroids can converge to different, sometimes much worse, final clusterings. **K-Means++** (§5) mitigates this by spreading out the initial centroids probabilistically rather than picking them uniformly at random; running with multiple restarts (`n_init`) and keeping the lowest-inertia result further reduces (but does not eliminate) the risk.
+- **Sensitive to feature scaling.** Since every algorithm here (K-Means, Ward linkage, DBSCAN) is built on Euclidean distance, a feature measured in the thousands will dominate a feature measured in single digits regardless of which one is actually informative. `StandardScaler` before fitting is not optional.
+- **Sensitive to outliers.** A single far-away point pulls a K-Means centroid toward it (since the objective is a *sum of squares*, and squares punish large deviations disproportionately). DBSCAN handles this better by design — it labels sparse/far points as noise rather than forcing them into a cluster.
+- **Hierarchical clustering doesn't scale.** Building and storing the full pairwise distance matrix is $O(N^2)$ in both time and memory, which becomes impractical past roughly tens of thousands of points.
+- **DBSCAN struggles with varying density.** A single global $\varepsilon$ cannot simultaneously suit a tight cluster and a loose one — points in the loose cluster may all get marked as noise, or the tight cluster and loose cluster may get merged incorrectly. (Density-based methods designed for varying density, like HDBSCAN, exist but are out of scope here.)
 
-### 5.1 The Problem
+## 10. Real-world usage
 
-High-dimensional data (e.g., 1000 features) suffers from:
-- **Curse of dimensionality:** In high dimensions, all points are "far apart" — distances become meaningless
-- **Computational cost:** Models train slowly on many features
-- **Overfitting:** More features → more parameters → easier to overfit
-- **Visualization:** Can't visualize more than 3 dimensions
+- **Customer segmentation** — grouping customers by purchase behavior for targeted marketing, typically K-Means or hierarchical clustering on engineered behavioral features.
+- **Anomaly/outlier flagging as a side effect** — DBSCAN's noise label (`-1`) is reused directly as an anomaly detector (see `16-anomaly-detection`).
+- **Document/topic clustering** — grouping similar text embeddings.
+- **Image compression / color quantization** — K-Means on pixel colors reduces an image to $K$ representative colors.
+- **Preprocessing before supervised learning** — cluster assignments or distances-to-centroid used as engineered features.
 
-**PCA** finds the directions of maximum variance in the data and projects the data onto a lower-dimensional subspace.
+**Evaluating a clustering in production**, when ground-truth labels are unavailable (the common case): use internal metrics — **silhouette score** (§8), **Davies-Bouldin index** (lower is better; ratio of within-cluster spread to between-cluster separation), and **Calinski-Harabasz index** (higher is better; ratio of between-cluster to within-cluster variance). When ground-truth *is* available for validation purposes (e.g. a held-out labeled subset), external metrics apply: **Adjusted Rand Index** (agreement with true labels, corrected for chance, range $[-1, 1]$), **Normalized Mutual Information**, **Homogeneity** (each cluster contains only one true class) and **Completeness** (all members of a true class land in one cluster).
 
-### 5.2 The Math: Eigenvectors and Eigenvalues
+## 11. Mental model
 
-**Step 1: Center the data**
+**K-Means alternates between "who belongs to which group" and "where is each group's center" until neither answer changes.** Hierarchical clustering builds the entire family tree of every possible grouping and lets you pick a cut afterward. DBSCAN doesn't ask "which center is closest" at all — it asks "am I in a dense, connected neighborhood," which is what lets it find any-shaped clusters and call sparse points what they are: noise, not a forced-fit group member.
 
-$$x_i \leftarrow x_i - \bar{x}, \quad \bar{x} = \frac{1}{N} \sum_{i=1}^N x_i$$
+## 12. Questions to think about
 
-**Step 2: Compute the covariance matrix**
-
-$$\mathbf{\Sigma} = \frac{1}{N-1} \mathbf{X}^T \mathbf{X} \in \mathbb{R}^{p \times p}$$
-
-Entry $\Sigma_{jk}$ = covariance between feature j and feature k.
-
-**Step 3: Compute eigenvectors and eigenvalues of Σ**
-
-$$\mathbf{\Sigma} \mathbf{v}_j = \lambda_j \mathbf{v}_j$$
-
-- $\mathbf{v}_j$ = **eigenvector (principal component)**: a direction in feature space
-- $\lambda_j$ = **eigenvalue**: the variance of the data along direction $\mathbf{v}_j$
-
-**Sort eigenvectors by eigenvalue** (largest first) — the first principal component $\mathbf{v}_1$ is the direction of maximum variance.
-
-**Step 4: Project the data**
-
-Select the top $k$ eigenvectors to form the projection matrix $\mathbf{W} \in \mathbb{R}^{p \times k}$:
-
-$$\mathbf{Z} = \mathbf{X} \mathbf{W}$$
-
-$\mathbf{Z} \in \mathbb{R}^{N \times k}$ is the dimensionality-reduced dataset.
-
-### 5.3 Explained Variance Ratio
-
-How much information does each principal component capture?
-
-$$\text{Explained Variance Ratio (PC}_j\text{)} = \frac{\lambda_j}{\sum_{i=1}^p \lambda_i}$$
-
-**Cumulative explained variance** tells you how many components you need to keep a certain percentage of information:
-
-$$\text{Cumulative}(k) = \frac{\sum_{j=1}^k \lambda_j}{\sum_{j=1}^p \lambda_j}$$
-
-**Example:**
-| PC | Variance | Explained Ratio | Cumulative |
-|----|----------|----------------|------------|
-| PC1 | 120 | 40% | 40% |
-| PC2 | 90 | 30% | 70% |
-| PC3 | 45 | 15% | 85% |
-| PC4 | 30 | 10% | 95% |
-| PC5 | 15 | 5% | 100% |
-
-If you want to retain 95% of variance, keep the first 4 PCs (down from 5 features → only a small reduction here, but in real data with 1000 features, you might keep 50 PCs for 95% variance).
-
-### 5.4 Intuitive Example: PCA in 2D → 1D
-
-Imagine a 2D dataset of (height, weight) that is highly correlated (tall people tend to weigh more). The data forms an elongated ellipse.
-
-- **PC1** = direction of maximum spread = approximately the line height/weight are both high (the "big person" axis). Variance λ₁ is large.
-- **PC2** = perpendicular to PC1 = captures the spread orthogonal to the main direction (thin-tall vs heavy-short). Variance λ₂ is small.
-
-By keeping only PC1, we compress 2D → 1D with minimal information loss.
-
-### 5.5 PCA vs Feature Selection
-
-| Aspect | PCA | Feature Selection |
-|--------|-----|------------------|
-| Creates new features? | Yes (linear combinations) | No (subsets of originals) |
-| Interpretability | Low (PC1 is a mix of all features) | High (keeps original features) |
-| Handles correlated features? | Yes (decorrelates them) | No |
-| Use for | Visualization, compression, preprocessing | When interpretability matters |
-
-### 5.6 Implementation
-
-```python
-from sklearn.decomposition import PCA
-from sklearn.preprocessing import StandardScaler
-import matplotlib.pyplot as plt
-import numpy as np
-
-# Always scale before PCA!
-scaler = StandardScaler()
-X_scaled = scaler.fit_transform(X)
-
-# Fit PCA
-pca = PCA()  # Compute all components first
-pca.fit(X_scaled)
-
-# Explained variance plot (Scree plot)
-plt.figure(figsize=(10, 4))
-plt.subplot(1, 2, 1)
-plt.bar(range(1, len(pca.explained_variance_ratio_)+1), pca.explained_variance_ratio_)
-plt.xlabel('Principal Component')
-plt.ylabel('Explained Variance Ratio')
-plt.title('Scree Plot')
-
-plt.subplot(1, 2, 2)
-cumvar = np.cumsum(pca.explained_variance_ratio_)
-plt.plot(range(1, len(cumvar)+1), cumvar, marker='o')
-plt.axhline(y=0.95, color='r', linestyle='--', label='95% variance')
-plt.xlabel('Number of Components')
-plt.ylabel('Cumulative Explained Variance')
-plt.title('How many components to keep?')
-plt.legend()
-plt.tight_layout()
-plt.show()
-
-# Choose number of components
-n_components = np.argmax(cumvar >= 0.95) + 1
-print(f"Components needed for 95% variance: {n_components}")
-
-# Fit with chosen number of components
-pca_final = PCA(n_components=n_components)
-X_pca = pca_final.fit_transform(X_scaled)
-print(f"Reduced shape: {X_pca.shape} (was {X_scaled.shape})")
-
-# 2D visualization (for any dataset)
-pca_2d = PCA(n_components=2)
-X_2d = pca_2d.fit_transform(X_scaled)
-
-plt.figure(figsize=(8, 6))
-scatter = plt.scatter(X_2d[:, 0], X_2d[:, 1], c=y, cmap='viridis', alpha=0.7)
-plt.colorbar(scatter)
-plt.xlabel(f'PC1 ({pca_2d.explained_variance_ratio_[0]:.1%} variance)')
-plt.ylabel(f'PC2 ({pca_2d.explained_variance_ratio_[1]:.1%} variance)')
-plt.title('PCA — 2D Projection')
-plt.show()
-```
-
----
-
-## 6) t-SNE and UMAP (Visualization Only)
-
-PCA is linear and may not capture non-linear structure. **t-SNE (t-distributed Stochastic Neighbor Embedding)** and **UMAP (Uniform Manifold Approximation and Projection)** are non-linear dimensionality reduction methods for visualization.
-
-### 6.1 t-SNE Intuition
-
-t-SNE preserves **local structure** (nearby points in high dimensions stay nearby in 2D):
-
-1. Convert distances between high-dimensional points to **probabilities** (Gaussian kernel):
-$$p_{j|i} = \frac{\exp(-||x_i - x_j||^2 / 2\sigma_i^2)}{\sum_{k \neq i} \exp(-||x_i - x_k||^2 / 2\sigma_i^2)}$$
-
-2. Initialize 2D positions randomly, define similar probabilities in 2D using a **t-distribution** (heavier tails to prevent crowding):
-$$q_{ij} = \frac{(1 + ||y_i - y_j||^2)^{-1}}{\sum_{k \neq l} (1 + ||y_k - y_l||^2)^{-1}}$$
-
-3. Minimize the **KL divergence** between the high-dimensional and 2D probability distributions using gradient descent.
-
-**Important caveats for t-SNE:**
-- Distances/sizes of clusters are **NOT meaningful** — only topology
-- Run multiple times with different seeds
-- `perplexity` hyperparameter controls the balance between local and global structure (typical: 5–50)
-- **Very slow** on large datasets (O(N²))
-
-### 6.2 UMAP
-
-UMAP is newer, faster, and often better than t-SNE:
-- Preserves more global structure
-- Much faster (O(N log N))
-- Can be used for actual dimensionality reduction (not just visualization)
-
-```python
-# t-SNE
-from sklearn.manifold import TSNE
-
-tsne = TSNE(n_components=2, perplexity=30, n_iter=1000, random_state=42)
-X_tsne = tsne.fit_transform(X_scaled)
-
-plt.scatter(X_tsne[:, 0], X_tsne[:, 1], c=y, cmap='tab10', alpha=0.7)
-plt.title('t-SNE Visualization')
-plt.show()
-
-# UMAP
-import umap
-reducer = umap.UMAP(n_components=2, n_neighbors=15, min_dist=0.1, random_state=42)
-X_umap = reducer.fit_transform(X_scaled)
-
-plt.scatter(X_umap[:, 0], X_umap[:, 1], c=y, cmap='tab10', alpha=0.7)
-plt.title('UMAP Visualization')
-plt.show()
-```
-
----
-
-## 7) Evaluating Clustering
-
-Clustering evaluation is hard because there's no ground truth. Two scenarios:
-
-### 7.1 When You Have Ground Truth Labels
-
-| Metric | Description | Range |
-|--------|-------------|-------|
-| **Adjusted Rand Index (ARI)** | How similar predicted clusters are to true labels, adjusted for chance | -1 to 1 (1 = perfect) |
-| **Normalized Mutual Information (NMI)** | Information shared between predicted and true clusters | 0 to 1 (1 = perfect) |
-| **Homogeneity** | Each cluster contains only members of a single class | 0 to 1 |
-| **Completeness** | All members of a class are in the same cluster | 0 to 1 |
-
-### 7.2 Without Ground Truth Labels
-
-| Metric | Description | Range |
-|--------|-------------|-------|
-| **Silhouette Score** | How well-separated clusters are | -1 to 1 (higher better) |
-| **Davies-Bouldin Index** | Average ratio of within-cluster spread to between-cluster separation | Lower is better |
-| **Calinski-Harabasz Index** | Ratio of between-cluster to within-cluster variance | Higher is better |
-
-```python
-from sklearn.metrics import (adjusted_rand_score, normalized_mutual_info_score,
-                             silhouette_score, davies_bouldin_score,
-                             calinski_harabasz_score)
-
-# With ground truth
-ari = adjusted_rand_score(y_true, labels)
-nmi = normalized_mutual_info_score(y_true, labels)
-
-# Without ground truth
-sil = silhouette_score(X_scaled, labels)
-db = davies_bouldin_score(X_scaled, labels)
-ch = calinski_harabasz_score(X_scaled, labels)
-
-print(f"Silhouette: {sil:.3f} (higher = better)")
-print(f"Davies-Bouldin: {db:.3f} (lower = better)")
-print(f"Calinski-Harabasz: {ch:.1f} (higher = better)")
-```
-
----
-
-## 8) Summary — When to Use What
-
-| Algorithm | Use When |
-|-----------|----------|
-| **K-Means** | Spherical clusters, K known, large datasets, need speed |
-| **Hierarchical** | Want to explore all K options, small/medium dataset, need dendrogram |
-| **DBSCAN** | Unknown number of clusters, irregular shapes, need outlier detection |
-| **PCA** | Reduce dimensions before modeling, correlated features, visualization |
-| **t-SNE / UMAP** | 2D/3D visualization only, exploring cluster structure |
-
----
-
-## Key Takeaways
-
-1. **K-Means** minimizes inertia using the EM algorithm; always use K-Means++ init and standardize features first.
-
-2. **Hierarchical clustering** builds a full dendrogram — cut at the right height to get any K; Ward linkage is typically best.
-
-3. **DBSCAN** needs no K, handles arbitrary shapes, and explicitly labels outliers; choose ε via the k-distance plot elbow.
-
-4. **PCA** projects data onto directions of maximum variance; choose components to retain 95%+ of variance; always scale first.
-
-5. **Silhouette score** is the most reliable metric for comparing clustering solutions when ground truth is unavailable.
+1. K-Means's alternating minimization is guaranteed to never increase $J$. Why does that *not* imply it will find the global minimum of $J$? Construct (conceptually) a small dataset and initialization where Lloyd's algorithm gets stuck in a bad local minimum.
+2. Ward's linkage minimizes the increase in the same WCSS objective K-Means minimizes. Given that, why might Ward's linkage hierarchical clustering and K-Means still produce different final clusters for the same $K$?
+3. DBSCAN has no notion of a "centroid." What does it mean, conceptually, for a border point to belong to a cluster despite not itself satisfying the core-point density condition?
+4. If you ran the elbow method and the silhouette score sweep on the same dataset and they disagreed on the best $K$, which would you trust more, and why — referring back to what each one actually measures?
+5. Why does feature scaling matter identically for K-Means, Ward-linkage hierarchical clustering, and DBSCAN, even though the three algorithms define "cluster" in completely different ways?
