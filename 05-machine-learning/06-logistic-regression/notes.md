@@ -1,741 +1,178 @@
-# Logistic Regression: A Complete Guide
+# 06 – Logistic Regression
 
-## Big Picture (Simple Summary)
+## Problem
 
-Imagine you are a doctor trying to predict if a patient has a disease (Class 1) or not (Class 0). You cannot just say "yes" or "no" with 100% certainty. Instead, you want a probability: "There is an 80% chance this patient has the disease."
+You need to predict a class, not a number: will this email be spam, will this patient have the disease, will this transaction be fraud. Often you don't just want a hard yes/no — you want a **probability**, because the cost of being wrong differs by direction (missing a cancer diagnosis is worse than a false alarm) and a probability lets you weigh that cost explicitly. So the target isn't a continuous quantity in $(-\infty, \infty)$ like `02-linear-regression`'s house price — it's a number that must live in $[0, 1]$ and behave like a probability. **How do you predict a bounded, well-calibrated probability from features, using a model whose parameters you can still fit and interpret the way you fit linear regression's?**
 
-**Logistic regression does exactly this.** It takes your data (like age, blood pressure, etc.), calculates a probability, and then uses a cutoff (usually 50%) to make a final decision.
+## Intuition
 
----
+Suppose you're predicting whether a student passes an exam from hours studied. You'd like the model to output something like "with 2 hours studied, there's a 30% chance of passing; with 8 hours, 92%." Two things are true about that output that weren't true of linear regression's raw prediction:
 
-## 1) What is Logistic Regression? (The "What")
+1. It must never leave $[0, 1]$ — "110% chance of passing" is meaningless.
+2. Its rate of change should slow down near the extremes — going from 1 to 2 hours of study should move the probability a lot if the student is currently around 50/50, but going from 9 to 10 hours shouldn't move it much, because the probability is already pinned near 1.
 
-It is a **supervised learning** algorithm for **classification** (not regression, despite the name).
+That second property is exactly the shape of an S-curve: steep in the middle, flat at the ends. Logistic regression's core idea is to keep the familiar linear form $\theta^Tx$ from linear regression — a weighted sum of features — but pass it through a squashing function that bends it into that S-curve before treating it as a probability. The linear part still does the "combine evidence from features" work; the squashing function only fixes the output range and shape.
 
-- **Input:** Your data features (e.g., hours studied, test score).
-- **Output:** A probability between 0 and 1.
-- **Decision Rule:** If probability >= 0.5 → predict Class 1 (e.g., "Pass"). Else → predict Class 0 (e.g., "Fail").
+**Worked example.** A spam classifier scores an email at $z = \theta^Tx = 2.0$ (some combination of "contains 'free'", "many exclamation marks", etc., weighted and summed). Passed through the S-curve, $z=2.0$ becomes a probability of about $0.88$ — "88% chance this is spam." If a different email scores $z=-3.0$, that becomes about $0.05$ — "5% chance." The linear score can be any real number; the probability it produces is always bounded.
 
-**The Formula:**
+## Why simpler approaches fail
 
-$$h_\theta(x) = \sigma(\theta^T x) = \frac{1}{1 + e^{-\theta^T x}}$$
+The obvious first attempt: fit ordinary linear regression on a $0$/$1$-encoded target, then threshold the output at $0.5$. This fails in three concrete, connected ways:
 
-This is called the **sigmoid function**. It squashes any number into a probability between 0 and 1.
+**Unbounded output.** Linear regression's prediction $\theta^Tx$ ranges over all of $\mathbb{R}$. Nothing stops it from predicting $-0.3$ or $1.8$ for a "probability." You can clip these to $[0,1]$, but then the model isn't actually optimizing for a sensible probability anywhere near the clipped region — it was fit to minimize squared error on raw, unclipped numbers, so the clipping is a patch applied after the fact, not something the fitting procedure knows about or accounts for.
 
-**Example:**  
-Suppose you build a model to predict if an email is spam (Class 1) or not (Class 0).  
-If the model outputs `0.85`, that means "85% chance this is spam". With a 0.5 threshold, you classify it as spam.
+**Wrong loss shape for a probability target.** Linear regression's objective is squared error, which treats every unit of prediction error the same regardless of how confident that error was. A model predicting $0.99$ for a true label of $0$ (a *confident, wrong* prediction, the kind you most want to punish) gets squared-error cost $(0.99-0)^2 = 0.98$ — barely more than a model predicting $0.6$ for the same wrong label, cost $(0.6-0)^2=0.36$: roughly a 2.7x penalty ratio between "barely wrong" and "confidently, badly wrong." That's a weak signal for something that should be treated very differently. (Section "Mathematical foundation" below derives a loss that punishes confident wrong answers far more sharply — the ratio there is unbounded, not 2.7x.)
 
----
+**Sensitivity to outliers in the wrong dimension.** Because linear regression fits $\theta^Tx$ to hit $0$ or $1$ as closely as possible in squared-error terms, a single far-outlying feature value (an email with an enormous count of some rare word, say) can drag the entire fitted line — and therefore every other point's threshold-0.5 decision — because squared error weights large deviations quadratically. A model built around probabilities shouldn't let one point's raw feature magnitude have that much leverage over everyone else's classification.
 
-## 2) Why NOT Linear Regression for Classification? (The "Why Not")
+What's needed: an output that's mathematically guaranteed to stay in $[0,1]$ regardless of the linear score's magnitude, paired with a loss function that is derived from the actual probabilistic structure of a yes/no outcome rather than borrowed from continuous-value regression.
 
-You might ask: *Why can't I just use a straight line to predict probabilities?*
+## Mathematical foundation
 
-Here's why linear regression fails:
+### From log-odds to the sigmoid
 
-| Problem | Explanation | Example |
-|---------|-------------|---------|
-| **Unbounded predictions** | Linear regression can predict values <0 or >1. Probabilities must be between 0 and 1. | Predicting a probability of -0.3 or 1.5 makes no sense. |
-| **Wrong loss function** | Squared error (MSE) doesn't work well for probabilities. It doesn't heavily punish confident wrong answers. | A model that says "99% chance of rain" on a sunny day gets only a small squared error. |
-| **Bad calibration** | Linear regression doesn't model log-odds, so the probabilities are unreliable. | You might get "probability 0.6" when the real chance is only 0.1. |
+Start from the quantity that actually behaves the way we want the linear model to predict: **log-odds**. The odds of an event with probability $p$ are
 
-**Logistic regression fixes all this** by using the sigmoid function and a proper loss called **log loss** (explained in detail below).
+$$\text{odds} = \frac{p}{1-p}$$
 
----
+Odds range over $(0, \infty)$ — still not what we want, since $\theta^Tx$ ranges over all of $\mathbb{R}$, including negative numbers. Taking the log fixes this:
 
-## 3) Math Intuition (The "How")
+$$\text{logit}(p) = \ln\left(\frac{p}{1-p}\right) \in (-\infty, \infty)$$
 
-### 3.1 Odds and Log-Odds (Logit)
+This is exactly the range of $\theta^Tx$. So logistic regression's defining assumption is: **the log-odds of the outcome are linear in the features**,
 
-Before understanding logistic regression, you need to understand **odds** and **log-odds**.
+$$\ln\left(\frac{p}{1-p}\right) = \theta^Tx = \theta_0 + \theta_1x_1 + \dots + \theta_nx_n$$
 
-**Odds** = Probability of event happening / Probability of event not happening
+Not the probability itself — the log-odds. This is the key structural choice, and everything else (the S-curve, the loss function) follows from inverting and fitting this equation.
 
-$$\text{Odds} = \frac{p}{1-p}$$
+**Solving for $p$** (the sigmoid function). Exponentiate both sides and rearrange:
 
-**Example:** If probability of winning is 0.8 (80%), then:
-- Odds = 0.8 / 0.2 = 4
-- This means: "4 to 1 in favor" of winning
+$$\frac{p}{1-p} = e^{\theta^Tx} \implies p = e^{\theta^Tx}(1-p) \implies p + pe^{\theta^Tx} = e^{\theta^Tx} \implies p = \frac{e^{\theta^Tx}}{1+e^{\theta^Tx}} = \frac{1}{1+e^{-\theta^Tx}}$$
 
-**Log-odds (Logit)** = The natural logarithm of odds
+Define $z = \theta^Tx$ and
 
-$$\text{Logit}(p) = \log\left(\frac{p}{1-p}\right)$$
+$$\sigma(z) = \frac{1}{1+e^{-z}}$$
 
-**Why log-odds?** Because log-odds can be ANY number from negative infinity to positive infinity (unlike probability which is stuck between 0 and 1).
+This is the **sigmoid function**. Check its limiting behavior: as $z \to \infty$, $e^{-z}\to 0$ so $\sigma(z) \to 1$; as $z \to -\infty$, $e^{-z}\to\infty$ so $\sigma(z)\to 0$; at $z=0$, $\sigma(0) = 1/2$. It is monotonic and strictly bounded in $(0,1)$ for every finite $z$ — the unboundedness problem from the previous section is fixed by construction, not by clipping.
 
-Logistic regression assumes:
+**Coefficient interpretation** falls directly out of the log-odds assumption: a one-unit increase in $x_j$ increases the log-odds by $\theta_j$, and multiplies the odds by $e^{\theta_j}$ (holding other features fixed). If $\theta_j = 0.5$, each extra unit of $x_j$ multiplies the odds of the positive class by $e^{0.5}\approx 1.65$ — a 65% odds increase.
 
-$$\log\left(\frac{p}{1-p}\right) = \theta_0 + \theta_1 x_1 + \dots + \theta_n x_n$$
+### Binary cross-entropy from maximum likelihood
 
-So it's **linear in log-odds**, not in probability. This is the key insight!
+Now derive the loss, rather than borrowing squared error. Treat each label $y^{(i)}\in\{0,1\}$ as a single draw from a **Bernoulli** distribution with success probability $p^{(i)} = \sigma(\theta^Tx^{(i)})$. The probability of observing the actual label under this model is
 
-### 3.2 The Sigmoid Function (The Magic S-Curve)
+$$P(y^{(i)}\mid x^{(i)}) = \left(p^{(i)}\right)^{y^{(i)}}\left(1-p^{(i)}\right)^{1-y^{(i)}}$$
 
-The sigmoid function takes any real number and maps it to (0, 1):
+(check: if $y^{(i)}=1$ this reduces to $p^{(i)}$; if $y^{(i)}=0$ it reduces to $1-p^{(i)}$ — exactly the Bernoulli PMF written in one expression using the exponent trick). Assuming the $m$ training examples are independent, the **likelihood** of the whole dataset under parameters $\theta$ is the product
 
-$$\sigma(z) = \frac{1}{1 + e^{-z}}$$
+$$L(\theta) = \prod_{i=1}^m \left(p^{(i)}\right)^{y^{(i)}}\left(1-p^{(i)}\right)^{1-y^{(i)}}$$
 
-**How it behaves:**
-- When z is very large positive (e.g., z = 10) → e^(-10) ≈ 0.000045 → σ(z) ≈ 0.99995 (close to 1)
-- When z = 0 → e^(0) = 1 → σ(z) = 0.5
-- When z is very large negative (e.g., z = -10) → e^(10) ≈ 22026 → σ(z) ≈ 0.000045 (close to 0)
+Maximum likelihood estimation picks $\theta$ to maximize $L(\theta)$. Products of many small numbers underflow numerically and are hard to differentiate, so take the log (monotonic, so it preserves the maximizer) — the **log-likelihood**:
 
-**Visualization (mental picture):** The sigmoid looks like an "S" shape that smoothly transitions from 0 to 1 as z increases.
+$$\ell(\theta) = \sum_{i=1}^m \left[y^{(i)}\ln p^{(i)} + (1-y^{(i)})\ln(1-p^{(i)})\right]$$
 
-### 3.3 Decision Boundary
+Maximizing $\ell(\theta)$ is the same as minimizing $-\ell(\theta)$, and dividing by $m$ turns a sum into an average (doesn't change the minimizer, keeps the scale independent of dataset size). This defines the **cost function**, binary cross-entropy / log loss:
 
-The default boundary is at probability = 0.5 → which means z = 0 → θ^T x = 0.
+$$J(\theta) = -\frac{1}{m}\sum_{i=1}^m \left[y^{(i)}\ln\left(h_\theta(x^{(i)})\right) + (1-y^{(i)})\ln\left(1-h_\theta(x^{(i)})\right)\right], \qquad h_\theta(x) = \sigma(\theta^Tx)$$
 
-This is a **straight line (hyperplane)** in feature space.
+This is not an arbitrary alternative to squared error — it is *the* loss implied by treating the labels as genuinely Bernoulli-distributed and asking for the maximum-likelihood fit, which is why it's the "correct" loss for a probability target in a way squared error on a linear model never was. It also directly fixes the "confident wrong answer" weakness above: as $h_\theta(x^{(i)}) \to 0$ when $y^{(i)}=1$ (confidently wrong), $-\ln(h_\theta(x^{(i)})) \to \infty$ — an unbounded, not merely 2.7x, penalty.
 
-**Example (2 features):**  
-Let's say θ₀ = -1, θ₁ = 2, θ₂ = -1
+**Convexity.** $J(\theta)$ is convex in $\theta$ (a consequence of $-\ln(\sigma(\cdot))$ and $-\ln(1-\sigma(\cdot))$ each being convex, and sums of convex functions being convex) — there is one global minimum, no bad local minima to get stuck in, unlike the non-convex loss surfaces of neural networks encountered later in this course.
 
-The decision boundary is: -1 + 2x₁ - x₂ = 0 → x₂ = 2x₁ - 1
+### Gradient of the loss
 
-- Points above this line (x₂ > 2x₁ - 1) → Class 1
-- Points below this line (x₂ < 2x₁ - 1) → Class 0
+To fit $\theta$ by gradient descent we need $\nabla_\theta J(\theta)$. Using the chain rule and the identity $\sigma'(z) = \sigma(z)(1-\sigma(z))$ (differentiate $\sigma(z)=(1+e^{-z})^{-1}$ directly to confirm this), the per-example derivative of $-\left[y\ln\sigma(z) + (1-y)\ln(1-\sigma(z))\right]$ with respect to $z=\theta^Tx$ simplifies remarkably:
 
-### 3.4 Coefficient Interpretation (Very Important!)
+$$\frac{\partial}{\partial z}\Big[-y\ln\sigma(z)-(1-y)\ln(1-\sigma(z))\Big] = \sigma(z) - y = h_\theta(x) - y$$
 
-Each coefficient θⱼ tells you how a feature affects the prediction.
+(the sigmoid's own derivative cancels cleanly against the $\ln$'s derivative — this cancellation is exactly *why* log loss was paired with the sigmoid rather than some other squashing function). Then by the chain rule through $z=\theta^Tx$, $\partial z/\partial\theta_j = x_j$, giving the full gradient over $m$ examples:
 
-**RULE 1:** A one-unit increase in feature xⱼ increases the **log-odds** by θⱼ (holding other features fixed).
+$$\nabla_\theta J(\theta) = \frac{1}{m}\mathbf X^T\left(h_\theta(\mathbf X) - \mathbf y\right)$$
 
-**RULE 2:** A one-unit increase in feature xⱼ multiplies the **odds** by e^(θⱼ).
+This has exactly the same *form* as linear regression's gradient (`02-linear-regression/notes.md`) — "prediction minus actual, times features" — even though $h_\theta$ here is nonlinear (sigmoid-of-linear). The difference is that logistic regression has **no closed-form solution** analogous to the normal equation, because setting this gradient to zero has no algebraic solution for $\theta$ — $\theta$ must be found iteratively.
 
-**Example:** Suppose you build a model to predict if a student passes (1) or fails (0) based on hours studied.
+## Algorithm
 
-If θ_hours = 0.5, then:
-- Each extra hour of study increases log-odds by 0.5
-- Each extra hour multiplies the odds by e^(0.5) ≈ 1.65
-- This means: The odds of passing increase by 65% for each additional hour of study
+1. Standardize features (unscaled features make gradient descent slow and unstable, same reasoning as `04-regularization`).
+2. Initialize $\theta$ (e.g. to zero).
+3. Repeat until convergence:
+   - Compute $z^{(i)} = \theta^Tx^{(i)}$ for all $i$, then $h_\theta(x^{(i)}) = \sigma(z^{(i)})$.
+   - Compute the gradient $\nabla_\theta J(\theta) = \frac{1}{m}\mathbf X^T(h_\theta(\mathbf X)-\mathbf y)$.
+   - Update $\theta := \theta - \alpha \nabla_\theta J(\theta)$.
+4. At prediction time, classify $\hat y = 1$ if $h_\theta(x) \geq 0.5$ (equivalently $\theta^Tx \geq 0$ — the decision boundary is the hyperplane $\theta^Tx=0$), else $\hat y = 0$; adjust the threshold away from $0.5$ when false positives and false negatives have different costs (see Failure modes / Real-world usage).
 
-**Important:** If θⱼ is negative, it decreases the odds. If θⱼ is zero, the feature has no effect.
+In practice, `lbfgs` (a quasi-Newton method, scikit-learn's default) or Newton-Raphson/IRLS converge faster than plain batch gradient descent by using curvature information, but batch gradient descent is what makes the mechanics visible, and is what's implemented from scratch below.
 
----
+## From-scratch implementation
 
-## 4) Log Loss Explained in DETAIL (Most Important Section!)
-
-This is the heart of logistic regression. Understanding log loss is CRITICAL.
-
-### 4.1 Why Can't We Use Squared Error?
-
-Let me show you why squared error fails.
-
-**Squared error for one example:** (prediction - actual)²
-
-Suppose actual class = 1 (pass).
-
-| Prediction (probability) | Squared Error |
-|-------------------------|---------------|
-| 0.99 (very confident, correct) | (0.99 - 1)² = 0.0001 |
-| 0.90 | (0.90 - 1)² = 0.01 |
-| 0.75 | (0.75 - 1)² = 0.0625 |
-| 0.51 (barely correct) | (0.51 - 1)² = 0.2401 |
-| 0.49 (barely wrong) | (0.49 - 1)² = 0.2601 |
-| 0.25 | (0.25 - 1)² = 0.5625 |
-| 0.01 (very confident, wrong!) | (0.01 - 1)² = 0.9801 |
-
-**The problem:** The penalty for a "confident wrong" prediction (0.01) is 0.98. But the penalty for a "barely wrong" prediction (0.49) is 0.26. The ratio is only about 4x. That's too small! We want to DESTROY confident wrong predictions.
-
-### 4.2 What is Log Loss? (The Solution)
-
-Log loss uses the **logarithm** to create an enormous penalty for confident wrong predictions.
-
-**For a single example:**
-
-$$\text{Cost}(h_\theta(x), y) = 
-\begin{cases}
--\log(h_\theta(x)) & \text{if } y = 1 \\
--\log(1 - h_\theta(x)) & \text{if } y = 0
-\end{cases}$$
-
-Let's understand this with a table.
-
-**Case 1: Actual class = 1 (y = 1)**
-
-| Prediction (probability of class 1) | Cost = -log(prediction) | Interpretation |
-|-------------------------------------|------------------------|----------------|
-| 0.99 (very confident, correct) | -log(0.99) ≈ 0.01 | Very small penalty ✅ |
-| 0.90 | -log(0.90) ≈ 0.105 | Small penalty |
-| 0.75 | -log(0.75) ≈ 0.288 | Moderate penalty |
-| 0.51 (barely correct) | -log(0.51) ≈ 0.673 | Noticeable penalty |
-| 0.49 (barely wrong) | -log(0.49) ≈ 0.713 | Still noticeable |
-| 0.25 | -log(0.25) = 1.386 | Large penalty |
-| 0.01 (very confident, wrong!) | -log(0.01) = 4.605 | HUGE penalty!!! 💀 |
-
-**See the difference?** Going from 0.25 to 0.01 (confidently wrong) increases the penalty from 1.386 to 4.605 — a 3.3x increase. The squared error only gave a 1.7x increase.
-
-**Case 2: Actual class = 0 (y = 0)** → Cost = -log(1 - prediction)
-
-| Prediction (probability of class 1) | 1 - prediction | Cost = -log(1 - p) |
-|-------------------------------------|----------------|-------------------|
-| 0.01 (confident correct) | 0.99 | 0.01 ✅ |
-| 0.10 | 0.90 | 0.105 |
-| 0.25 | 0.75 | 0.288 |
-| 0.49 (barely correct) | 0.51 | 0.673 |
-| 0.51 (barely wrong) | 0.49 | 0.713 |
-| 0.75 | 0.25 | 1.386 |
-| 0.99 (confident wrong) | 0.01 | 4.605 💀 |
-
-### 4.3 Why "Log" Makes Sense (The Intuition)
-
-The logarithm function log(x) has a special property: as x approaches 0, -log(x) approaches +infinity.
-
-**Visualize it:**
-- log(1) = 0 (perfect prediction → zero penalty)
-- log(0.5) = -0.693 → -log(0.5) = 0.693
-- log(0.1) = -2.302 → -log(0.1) = 2.302
-- log(0.01) = -4.605 → -log(0.01) = 4.605
-- log(0.001) = -6.908 → -log(0.001) = 6.908
-
-As prediction approaches 0 (completely wrong for class 1), the penalty goes to INFINITY. The model will do ANYTHING to avoid being confident and wrong.
-
-### 4.4 The Combined Formula (Binary Cross-Entropy)
-
-We can write both cases in ONE formula:
-
-$$\text{Cost}(h_\theta(x), y) = -y \log(h_\theta(x)) - (1-y) \log(1-h_\theta(x))$$
-
-**Check it:**
-- If y = 1: second term vanishes (1-y = 0) → Cost = -log(h(x)) ✅
-- If y = 0: first term vanishes (y = 0) → Cost = -log(1 - h(x)) ✅
-
-### 4.5 The Complete Loss Function (Over All Training Data)
-
-For m training examples:
-
-$$J(\theta) = -\frac{1}{m} \sum_{i=1}^m \left[ y^{(i)} \log(h_\theta(x^{(i)})) + (1-y^{(i)}) \log(1 - h_\theta(x^{(i)})) \right]$$
-
-This is also called the **negative log-likelihood** because maximizing the likelihood is equivalent to minimizing this loss.
-
-### 4.6 Real Example: Comparing Squared Error vs Log Loss
-
-Let's say you have 3 predictions on 3 different emails (spam = 1):
-
-| Email | Actual | Model A Prediction | Model B Prediction |
-|-------|--------|-------------------|-------------------|
-| 1 | 1 | 0.99 | 0.60 |
-| 2 | 1 | 0.98 | 0.61 |
-| 3 | 0 | 0.02 | 0.40 |
-
-**Which model is better?** Model A is very confident and correct. Model B is hesitant.
-
-**Squared Error:**
-- Model A: (0.99-1)² + (0.98-1)² + (0.02-0)² = 0.0001 + 0.0004 + 0.0004 = 0.0009
-- Model B: (0.60-1)² + (0.61-1)² + (0.40-0)² = 0.16 + 0.1521 + 0.16 = 0.4721
-
-Squared Error says Model A is 524x better. But is that fair?
-
-**Log Loss:**
-- Model A: -log(0.99) - log(0.98) - log(1-0.02) = 0.010 + 0.020 + 0.020 = 0.050
-- Model B: -log(0.60) - log(0.61) - log(1-0.40) = 0.511 + 0.494 + 0.511 = 1.516
-
-Log Loss says Model A is 30x better. Still strongly prefers Model A, but less extreme. Log loss is **proper** for probabilities — it gives the right incentive to output well-calibrated probabilities, not just extreme values.
-
----
-
-## 5) Convexity and Convergence
-
-### 5.1 What is Convexity?
-
-A function is **convex** if the line segment between any two points on the graph lies above the graph.
-
-**Why does this matter?** 
-- Convex functions have ONE global minimum (no bad local minima)
-- Any optimization method will eventually find the best answer
-- Non-convex functions (like neural networks) can get stuck in suboptimal local minima
-
-**Good news:** Log loss for logistic regression is CONVEX in θ.  
-**Bad news:** Squared error for logistic regression is NON-CONVEX (that's another reason we don't use it).
-
-### 5.2 How We Find the Best θ (Optimization)
-
-There is **no closed-form solution** (unlike linear regression where you can do θ = (X^T X)^(-1) X^T y). We must use iterative methods.
-
-**Method 1: Batch Gradient Descent**
-
-Update rule:
-$$\theta := \theta - \alpha \cdot \frac{1}{m} X^T (h_\theta(X) - y)$$
-
-Where α is the learning rate (e.g., 0.01).
-
-**Example:** If current prediction is 0.8 but actual is 1, the error (h-y) is negative, so θ increases slightly to make future predictions higher.
-
-**Method 2: Stochastic Gradient Descent (SGD)**
-- Update using ONE random example at a time
-- Much faster for large datasets (millions of examples)
-- Noisier updates but can escape shallow plateaus
-
-**Method 3: Newton-Raphson / IRLS**
-- Uses both gradient (first derivative) and Hessian (second derivative)
-- Converges in fewer iterations
-- Each iteration is more expensive (O(n³) for Hessian inversion)
-- Great for small to medium datasets
-
-**Method 4: L-BFGS (Quasi-Newton)**
-- Approximates the Hessian without storing the full matrix
-- Default in scikit-learn for logistic regression
-- Good balance of speed and memory
-
-### 5.3 Convergence Problems and Solutions
-
-**Problem 1: Complete Separation**
-
-When data is perfectly separable (e.g., all positive examples have x > 0, all negative have x < 0), the log loss can keep decreasing forever, causing coefficients to blow up to infinity.
-
-**Solution:** Add regularization (see Section 6).
-
-**Problem 2: Poor Feature Scaling**
-
-If one feature is in range [0, 1] and another in [0, 1000000], the optimization will be slow and unstable.
-
-**Solution:** Standardize features to mean=0, variance=1.
-
-**Problem 3: Multicollinearity**
-
-When two features are highly correlated (e.g., "height in feet" and "height in inches"), the Hessian becomes ill-conditioned.
-
-**Solution:** Remove redundant features or use L2 regularization.
-
----
-
-## 6) Regularization (Prevent Overfitting)
-
-Regularization adds a penalty to large coefficients, forcing the model to be simpler.
-
-### 6.1 L2 Regularization (Ridge)
-
-Adds the sum of squared coefficients:
-
-$$J(\theta) = \text{Log Loss} + \frac{\lambda}{2m} \sum_{j=1}^n \theta_j^2$$
-
-**Effect:** Shrinks all coefficients toward zero (but never exactly zero).  
-**Best for:** When you have many small to medium effects.
-
-### 6.2 L1 Regularization (Lasso)
-
-Adds the sum of absolute coefficients:
-
-$$J(\theta) = \text{Log Loss} + \frac{\lambda}{m} \sum_{j=1}^n |\theta_j|$$
-
-**Effect:** Can drive some coefficients to exactly zero → feature selection.  
-**Best for:** When you suspect only a few features are important.
-
-### 6.3 Elastic Net
-
-A mix of L1 and L2.
-
-### 6.4 Understanding λ and C
-
-- **λ (lambda):** Regularization strength. Higher λ = more regularization.
-- **In scikit-learn:** They use `C` where `C = 1/λ`. Smaller C = stronger regularization.
-
-**Example:** 
-- C = 0.01 → very strong regularization → high bias, low variance
-- C = 1 → default
-- C = 100 → very weak regularization → low bias, high variance (overfitting risk)
-
-### 6.5 Choosing λ with Cross-Validation
+Implemented in `logistic-regression.ipynb`: plain NumPy batch gradient descent fitting the sigmoid model above on a small, linearly-separable 2D toy dataset, using exactly the update rule derived in "Algorithm":
 
 ```python
-# Pseudocode
-for lambda in [0.001, 0.01, 0.1, 1, 10, 100]:
-    train model with regularization = lambda
-    evaluate on validation set
-pick lambda with best validation score
+def sigmoid(z):
+    return 1 / (1 + np.exp(-z))
+
+def fit_logistic_regression(X, y, lr=0.1, n_iter=500):
+    m, n = X.shape
+    Xb = np.hstack([np.ones((m, 1)), X])   # bias column
+    theta = np.zeros(n + 1)
+    history = []
+    for _ in range(n_iter):
+        z = Xb @ theta
+        h = sigmoid(z)
+        grad = (1 / m) * Xb.T @ (h - y)
+        theta -= lr * grad
+        history.append(theta.copy())
+    return theta, history
 ```
 
-## 7  Performance Metrics (How to Evaluate)
+The notebook plots the decision boundary ($\theta^Tx=0$, a straight line since $x$ is 2D) at several points during training, showing it start near the origin (from the zero initialization) and rotate/shift toward the boundary that separates the two classes as gradient descent proceeds — a direct visual confirmation that minimizing $J(\theta)$ is equivalent to finding the separating hyperplane implied by the log-odds assumption.
 
-### 7.1 Confusion Matrix (The Foundation)
+## Practical implementation
 
-|                      | Predicted YES (1) | Predicted NO (0) |
-|----------------------|-------------------|------------------|
-| **Actual YES (1)**   | True Positive (TP) | False Negative (FN) |
-| **Actual NO (0)**    | False Positive (FP) | True Negative (TN) |
+`logistic-regression.ipynb` fits `sklearn.linear_model.LogisticRegression` on a synthetic 10-feature binary classification dataset (`make_classification`), then tunes `penalty`, `C` (`sklearn`'s $1/\lambda$ regularization strength — see `04-regularization/notes.md`), and `solver` via `GridSearchCV`/`RandomizedSearchCV` over `StratifiedKFold` cross-validation. This maps directly back to the from-scratch step: `LogisticRegression`'s default solver (`lbfgs`) minimizes the identical $J(\theta)$ derived above, just with a smarter (quasi-Newton, curvature-aware) optimizer than plain batch gradient descent, plus an optional L2/L1/elastic-net penalty term added to $J(\theta)$ exactly as in `04-regularization`.
 
-**Example:** Cancer test on 100 patients
+`multiclass-classification.ipynb` extends the binary case to $K>2$ classes via `OneVsOneClassifier(LogisticRegression())` — training $\binom{K}{2}$ binary classifiers, one per pair of classes, and predicting by majority vote. The mathematically cleaner alternative, **softmax (multinomial) regression**, generalizes the sigmoid directly: instead of one log-odds equation, there are $K$ linear scores $z_k = \theta_k^Tx$, and
 
-|                      | Predicted Cancer | Predicted No Cancer |
-|----------------------|------------------|---------------------|
-| **Actually Cancer**  | 45 (TP)          | 5 (FN)              |
-| **Actually Healthy** | 10 (FP)          | 40 (TN)             |
+$$P(y=k\mid x) = \frac{e^{z_k}}{\sum_{j=1}^K e^{z_j}}$$
 
-### 7.2 Key Metrics Explained
+which reduces exactly to the sigmoid when $K=2$ (subtracting the two-class scores and simplifying recovers $\sigma(z_1-z_2)$) — softmax is the natural multiclass generalization of the same log-odds idea, producing probabilities across all $K$ classes that sum to $1$, rather than $K(K-1)/2$ pairwise votes that don't.
 
-**Accuracy (not always good!)**
-$$\text{Accuracy} = \frac{TP + TN}{TP + TN + FP + FN} = \frac{45 + 40}{100} = 85\%$$
+## Experiment
 
-**BUT** if only 5% have cancer, a model that always says "no cancer" gets 95% accuracy but is useless! That's why we need other metrics.
+**Hypothesis (stated before running):** on the same small, linearly-separable 2D toy dataset, the from-scratch gradient-descent decision boundary and scikit-learn's `LogisticRegression` decision boundary should coincide within numerical tolerance — both are minimizing the same convex $J(\theta)$, so (given enough gradient-descent iterations to converge, and no regularization mismatch) there is only one global minimum for both to find.
 
-**Precision (When you say yes, how often are you right?)**
-$$\text{Precision} = \frac{TP}{TP + FP} = \frac{45}{45 + 10} = 81.8\%$$
+**Setup:** generate a small 2D two-class dataset with `make_blobs` or `make_classification`, fit both (a) the from-scratch batch-gradient-descent implementation above, run for enough iterations to converge, and (b) `sklearn.linear_model.LogisticRegression(penalty=None)` (no regularization, to match the unpenalized from-scratch objective exactly) on identical training data. Compare the two fitted decision boundaries (the line $\theta^Tx=0$ for each) visually and by comparing predicted classes on a grid of test points.
 
-Use when false positives are costly. Example: Spam detection — flagging a good email as spam (FP) is very bad.
+**Actual result:** see `logistic-regression.ipynb`'s from-scratch section — the two boundaries overlap closely, and the fraction of grid points where the two models disagree is near zero, confirming both procedures converge to (numerically close to) the same optimum of the same convex objective.
 
-**Recall / Sensitivity (Of all actual yes, how many did you catch?)**
-$$\text{Recall} = \frac{TP}{TP + FN} = \frac{45}{45 + 5} = 90\%$$
+**Interpretation:** this is expected precisely because $J(\theta)$ is convex with one global minimum — any correct optimizer reaching convergence should land in the same place, whether it's plain gradient descent or `lbfgs`. Small residual differences come from the from-scratch implementation using a fixed learning rate and iteration count rather than `lbfgs`'s convergence-tolerance-based stopping.
 
-Use when false negatives are costly. Example: Cancer detection — missing a cancer patient (FN) is terrible.
+**Limitations:** this compares boundaries on a single small synthetic dataset chosen to be linearly separable and low-dimensional specifically so the boundary can be visualized directly; it doesn't test convergence behavior on non-separable, high-dimensional, or class-imbalanced data, where the two optimizers' convergence paths (and any regularization defaults) could diverge more visibly.
 
-**Specificity (Of all actual no, how many did you correctly say no to?)**
-$$\text{Specificity} = \frac{TN}{TN + FP} = \frac{40}{40 + 10} = 80\%$$
+## Failure modes
 
-**F1 Score (Harmonic mean of precision and recall)**
-$$F1 = 2 \times \frac{\text{Precision} \times \text{Recall}}{\text{Precision} + \text{Recall}} = 2 \times \frac{0.818 \times 0.90}{0.818 + 0.90} \approx 0.857$$
+- **Perfect separability causes coefficients to diverge.** If the training data can be perfectly separated by a hyperplane, $J(\theta)$ can be driven arbitrarily close to $0$ by scaling $\theta$ to arbitrarily large magnitude in the correct direction — the sigmoid just gets pushed harder toward $0$ or $1$ with no penalty for doing so, so gradient descent never converges to a finite optimum; $\|\theta\|$ grows without bound. This is the *exact same failure mode* the closed-form Ridge solution in `04-regularization/notes.md` was shown to fix for a singular $\mathbf X^T\mathbf X$ — adding an L2 (or L1) penalty term to $J(\theta)$ bounds $\|\theta\|$ and gives a well-defined finite optimum even under perfect separation.
+- **Class imbalance biases the decision threshold.** With, say, 99% negative / 1% positive training data, a model that predicts "negative" for everything achieves 99% accuracy while being useless, and even a well-fit model's default $0.5$ threshold is systematically miscalibrated for the minority class's actual prevalence. **Accuracy stops being a useful metric here** — instead, evaluate with metrics built from the confusion matrix (TP, FP, TN, FN counts):
+  $$\text{Precision} = \frac{TP}{TP+FP} \qquad \text{Recall} = \frac{TP}{TP+FN} \qquad F_1 = 2\cdot\frac{\text{Precision}\cdot\text{Recall}}{\text{Precision}+\text{Recall}}$$
+  Precision answers "of everything flagged positive, how much really was" (matters when false positives are costly, e.g. flagging a legitimate email as spam); recall answers "of everything actually positive, how much was caught" (matters when false negatives are costly, e.g. missing an actual cancer case). The **ROC curve** (recall vs. false-positive-rate $FP/(FP{+}TN)$ swept over thresholds) and its AUC summarize discriminative power independent of any one threshold — but AUC can look misleadingly good under heavy imbalance, where PR-AUC is the more honest summary. Mitigations: `class_weight='balanced'` (reweights each class's contribution to $J(\theta)$ inversely to its frequency, so the minority class's errors count more), oversampling the minority class (e.g. SMOTE) or undersampling the majority class, and — most directly — replacing the default $0.5$ cutoff with a **cost-derived threshold**: given $\text{cost}_{FP}$ and $\text{cost}_{FN}$, sweep candidate thresholds and pick the one minimizing $FP\cdot\text{cost}_{FP} + FN\cdot\text{cost}_{FN}$ on validation data, rather than assuming the two error types are equally costly.
+- **Sensitive to unscaled features and outliers** for the same underlying reason described in "Why simpler approaches fail": the linear score $\theta^Tx$ that feeds the sigmoid can still be dominated by one large-magnitude feature or outlying point, distorting the fitted boundary even though the *output* is now correctly bounded.
+- **Purely linear decision boundary.** The boundary $\theta^Tx=0$ is a hyperplane; logistic regression cannot separate classes arranged in concentric circles or an XOR pattern without manually added polynomial/interaction features (`03-polynomial-regression`-style feature engineering) or a fundamentally different, nonlinear model (`07-svm`'s kernel trick, or neural networks later in this course).
 
-F1 is best when you care about both precision and recall equally.
+## Real-world usage
 
-### 7.3 ROC Curve and AUC
+- The default first model for binary classification on tabular data — fast to train, coefficients are directly interpretable as log-odds effects, and probability outputs support cost-sensitive thresholding (fraud detection, credit approval, medical screening) in a way a pure classifier without probabilities cannot.
+- Regularized logistic regression (`04-regularization`'s L1/L2/elastic-net machinery applied to $J(\theta)$) is standard in high-dimensional settings (text classification with bag-of-words features, genomics) both for stabilizing coefficients and for interpretable feature selection.
+- Calibration techniques (Platt scaling — literally fitting a logistic regression on top of another model's raw scores — and isotonic regression) exist specifically because many other classifiers' outputs are *not* well-calibrated probabilities the way logistic regression's are by construction; logistic regression is often the calibration tool of choice for other models.
+- Softmax regression's exact functional form reappears as the final layer of virtually every neural network classifier later in this course — logistic/softmax regression is a one-layer special case of that architecture.
 
-**ROC Curve:** Plots True Positive Rate (Recall) vs False Positive Rate (1 - Specificity) as you vary the decision threshold.
+## Mental model
 
-- FPR = FP / (FP + TN) — how many negatives you incorrectly call positive
+Logistic regression is linear regression on the log-odds of the outcome: keep the familiar "weighted sum of features" from linear regression, but fit it to predict $\ln\frac{p}{1-p}$ instead of $y$ directly, then invert that relationship (the sigmoid) to recover a probability that is mathematically guaranteed to live in $[0,1]$ — and fit it with the loss that maximum likelihood on a Bernoulli outcome actually implies, not squared error borrowed from a different kind of target.
 
-**AUC (Area Under ROC Curve):**
-- 0.5 = random guessing (model is useless)
-- 0.7-0.8 = acceptable
-- 0.8-0.9 = excellent
-- 0.9-1.0 = outstanding
+## Questions to think about
 
-**Example:** 
-- Model A has AUC 0.95 → excellent
-- Model B has AUC 0.55 → barely better than random
-
-**When to use PR AUC instead:** When data is highly imbalanced (e.g., 1% positives). ROC can be misleadingly optimistic in that case.
-
-### 7.4 Log Loss and Brier Score
-
-**Log Loss** (we already covered): Measures probability quality. Lower is better.
-
-**Brier Score:** Mean squared error of probabilities.
-$$\text{Brier} = \frac{1}{m} \sum_{i=1}^m (h_\theta(x^{(i)}) - y^{(i)})^2$$
-
-- Range: 0 to 1
-- 0 = perfect predictions
-- 0.25 = random (for balanced data)
-- Lower is better
-
-**Comparison:** Brier score is easier to interpret (it's just MSE), but log loss is more "proper" for probabilities.
-
----
-
-## 8) Thresholding and Calibration
-
-### 8.1 Changing the Decision Threshold
-
-Default threshold is 0.5, but you can change it based on costs.
-
-**Example: Loan Default Prediction**
-
-| Scenario | Cost of False Positive | Cost of False Negative |
-|----------|----------------------|----------------------|
-| Approve loan to someone who defaults | $10,000 (big loss) | N/A |
-| Deny loan to someone who would repay | $500 (lost profit) | N/A |
-
-Since FP is 20x more expensive than FN, you should **lower the threshold** to approve fewer loans.
-
-**If FP is more costly → increase threshold** (be more confident before saying yes)
-**If FN is more costly → decrease threshold** (catch more positives, accept some FPs)
-
-### 8.2 How to Choose the Threshold
-
-1. Define the cost of each type of error
-2. Calculate expected cost for each possible threshold
-3. Pick threshold that minimizes expected cost
-
-**Example calculation:**
-- Cost(FP) = $10,000
-- Cost(FN) = $500
-
-For threshold = 0.5: FP=10, FN=5 → Cost = 10×10000 + 5×500 = $102,500
-For threshold = 0.3: FP=20, FN=2 → Cost = 20×10000 + 2×500 = $201,000 (worse)
-For threshold = 0.7: FP=2, FN=15 → Cost = 2×10000 + 15×500 = $27,500 (better!)
-
-### 8.3 Calibration (Are Probabilities Trustworthy?)
-
-A model is **calibrated** if: when it predicts 70% probability, the event actually happens ~70% of the time.
-
-**Example of miscalibration:**
-- Weather app predicts "30% chance of rain"
-- But in reality, when it says 30%, it rains only 10% of the time → over-confident
-
-**How to fix miscalibration:**
-- **Platt scaling:** Fit a logistic regression on top of the model's outputs
-- **Isotonic regression:** Non-parametric calibration (needs more data)
-
-**When calibration matters:** Medical diagnosis (probability of disease), finance (probability of default)
-
----
-
-## 9) Multiclass Logistic Regression (More Than 2 Classes)
-
-### 9.1 One-vs-Rest (OvR) / One-vs-All (OvA)
-
-Train K binary classifiers (one for each class). For class k, treat all examples of class k as positive, all others as negative.
-
-**Example:** 3 classes: Dog, Cat, Bird
-- Classifier 1: Dog vs (Cat or Bird)
-- Classifier 2: Cat vs (Dog or Bird)
-- Classifier 3: Bird vs (Dog or Cat)
-
-Prediction: Pick the class whose classifier gives the highest probability.
-
-**Pros:** Simple, works well  
-**Cons:** Probabilities aren't calibrated across classes (they don't sum to 1)
-
-### 9.2 Multinomial (Softmax Regression)
-
-A single model that outputs probabilities for all classes that sum to 1.
-
-**Softmax formula for class k:**
-
-$$P(y=k | x) = \frac{e^{\theta_k^T x}}{\sum_{j=1}^K e^{\theta_j^T x}}$$
-
-**Example:** Features: [weight=5kg, hasFeathers=1, sound='meow']
-
-| Class | Score (θ^T x) | e^score | Probability |
-|-------|---------------|---------|-------------|
-| Dog | 2.1 | 8.17 | 0.15 |
-| Cat | 3.5 | 33.1 | 0.60 |
-| Bird | 1.8 | 6.05 | 0.25 |
-| **Total** | | 47.32 | **1.00** |
-
-The model predicts Cat with 60% confidence.
-
-**When to use:** Classes are well-separated, you have enough data, and you want calibrated probabilities.
-
----
-
-## 10) Handling Imbalanced Datasets
-
-**Problem:** 99% of your data is "no", 1% is "yes". A model that always says "no" gets 99% accuracy but is useless.
-
-### 10.1 Solutions
-
-**Solution 1: Class Weights**
-Assign higher weight to the minority class.
-
-```python
-# scikit-learn
-model = LogisticRegression(class_weight='balanced')
-# Or manually: class_weight={0: 1, 1: 10}  # 10x weight for class 1
-```
-
-**Effect:** Penalizes mistakes on minority class more heavily.
-
-**Solution 2: Resampling**
-
-- **Oversampling (SMOTE):** Create synthetic examples of the minority class
-- **Undersampling:** Randomly remove examples from the majority class
-
-**Solution 3: Use Appropriate Metrics**
-
-- Don't use accuracy!
-- Use Precision, Recall, F1, PR AUC
-
-**Solution 4: Adjust Decision Threshold**
-
-Lower the threshold to catch more positives.
-
-**Solution 5: Use Algorithms Designed for Imbalanced Data**
-
-- BalancedRandomForest
-- XGBoost with `scale_pos_weight`
-
-### 10.2 Example
-
-Dataset: 1000 transactions, 10 are fraud (1%), 990 are legit (99%)
-
-| Approach | Accuracy | Recall (fraud caught) | Precision (fraud claims correct) |
-|----------|----------|----------------------|--------------------------------|
-| Always say "legit" | 99% | 0% | N/A |
-| Default logistic (0.5 threshold) | 98% | 40% | 50% |
-| With class weights | 95% | 85% | 30% |
-| + lower threshold to 0.3 | 92% | 92% | 20% |
-
-There's always a tradeoff between recall and precision!
-
----
-
-## 11) Assumptions and Limitations
-
-### 11.1 Assumptions
-
-1. **Linear relationship between features and log-odds** (not probability!)
-   - Check: Plot log-odds vs each feature. Should be roughly linear.
-
-2. **Independence of observations**
-   - Logistic regression assumes each data point is independent (not time series or grouped data)
-
-3. **No perfect multicollinearity**
-   - Features should not be perfectly correlated (r = 1.0)
-   - Solution: Remove one of the correlated features
-
-4. **Large sample size** (rule of thumb: 10-20 events per feature)
-
-### 11.2 Limitations
-
-1. **Linear decision boundary only**
-   - Cannot learn XOR, circles, or complex patterns
-   - Solution: Add polynomial features (x₁², x₁x₂) or use a neural network
-
-2. **Complete separation problem**
-   - When data is perfectly separable, coefficients blow up
-   - Solution: Add regularization
-
-3. **Cannot handle missing values natively**
-   - Must impute (fill in) missing data first
-
-4. **Sensitive to outliers**
-   - Extreme feature values can heavily influence the decision boundary
-
-5. **Requires feature scaling for convergence**
-   - Without scaling, optimization is slow
-
----
-
-## 12) Practical Workflow (Step-by-Step)
-
-### Step 1: Define the Problem
-- What is Class 1 (the positive class)?
-- What are the costs of false positives vs false negatives?
-
-### Step 2: Explore Data
-```python
-# Check class balance
-df['target'].value_counts(normalize=True)
-
-# If imbalance > 10:1, plan to handle it
-```
-
-### Step 3: Preprocess
-```python
-from sklearn.preprocessing import StandardScaler
-
-# Handle missing values
-df = df.fillna(df.median())
-
-# Scale features (crucial for logistic regression!)
-scaler = StandardScaler()
-X_scaled = scaler.fit_transform(X)
-
-# Encode categorical variables
-X = pd.get_dummies(X, drop_first=True)
-```
-
-### Step 4: Split Data
-```python
-from sklearn.model_selection import train_test_split
-
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42, stratify=y  # preserve class balance
-)
-```
-
-### Step 5: Train with Cross-Validation
-```python
-from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import GridSearchCV
-
-param_grid = {
-    'C': [0.001, 0.01, 0.1, 1, 10, 100],
-    'penalty': ['l2'],
-    'solver': ['lbfgs']
-}
-
-model = LogisticRegression(max_iter=1000)
-grid = GridSearchCV(model, param_grid, cv=5, scoring='f1')
-grid.fit(X_train, y_train)
-```
-
-### Step 6: Evaluate
-```python
-from sklearn.metrics import classification_report, confusion_matrix, roc_auc_score
-
-y_pred = grid.predict(X_test)
-y_pred_proba = grid.predict_proba(X_test)[:, 1]
-
-print(confusion_matrix(y_test, y_pred))
-print(classification_report(y_test, y_pred))
-print(f"AUC: {roc_auc_score(y_test, y_pred_proba):.3f}")
-```
-
-### Step 7: Adjust Threshold (If Needed)
-```python
-from sklearn.metrics import precision_recall_curve
-
-precisions, recalls, thresholds = precision_recall_curve(y_test, y_pred_proba)
-
-# Find threshold that gives desired precision/recall tradeoff
-desired_recall = 0.90
-idx = np.argmin(np.abs(recalls - desired_recall))
-optimal_threshold = thresholds[idx]
-
-# Apply new threshold
-y_pred_adjusted = (y_pred_proba >= optimal_threshold).astype(int)
-```
-
-### Step 8: Interpret Coefficients
-```python
-coefficients = grid.best_estimator_.coef_[0]
-feature_names = X.columns
-
-for name, coef in sorted(zip(feature_names, coefficients), key=lambda x: abs(x[1]), reverse=True)[:10]:
-    print(f"{name}: {coef:.3f} (odds ratio = {np.exp(coef):.2f})")
-```
-
-### Step 9: Calibrate (If Probability Quality Matters)
-```python
-from sklearn.calibration import CalibratedClassifierCV
-
-calibrated = CalibratedClassifierCV(grid.best_estimator_, method='sigmoid', cv=5)
-calibrated.fit(X_train, y_train)
-```
-
----
-
-## 13) Quick Comparison: Linear vs Logistic Regression
-
-| Aspect | Linear Regression | Logistic Regression |
-|--------|-------------------|----------------------|
-| **Target variable** | Continuous (e.g., price, temperature) | Binary class (0/1) or probability |
-| **Output range** | (-∞, +∞) | (0, 1) |
-| **Equation** | y = θ^T x | p = 1/(1 + e^(-θ^T x)) |
-| **Loss function** | Mean squared error | Log loss (binary cross-entropy) |
-| **Convex?** | Yes (always) | Yes (with log loss) |
-| **Closed-form solution?** | Yes (normal equation) | No (iterative only) |
-| **Interpretation** | "Feature increases target by θ" | "Feature multiplies odds by e^θ" |
-| **Use for** | Predicting sales, temperature, etc. | Predicting spam, disease, churn, etc. |
-
----
-
-## 14) Common Pitfalls and How to Avoid Them
-
-| Pitfall | Why It's Bad | How to Avoid |
-|---------|--------------|---------------|
-| Using accuracy on imbalanced data | Misleading results | Use F1, PR AUC, or balanced accuracy |
-| Not scaling features | Slow convergence, unstable coefficients | Always use StandardScaler |
-| Default threshold 0.5 | Suboptimal for business costs | Tune threshold based on cost matrix |
-| No regularization | Overfitting, separation issues | Always use at least L2 regularization |
-| Ignoring multicollinearity | Unstable coefficient estimates | Check correlation matrix, use L2 or drop features |
-| Interpreting coefficients with unscaled features | Comparisons are meaningless | Interpret after scaling, or use standardized coefficients |
-
----
-
-## Summary: The 5 Key Takeaways
-
-1. **Logistic regression predicts probabilities** for classification using the sigmoid function: p = 1/(1+e^(-θ^T x))
-
-2. **Log loss is the right loss function** because it heavily penalizes confident wrong predictions (unlike squared error)
-
-3. **The loss function is convex** so optimization always finds the global minimum
-
-4. **Regularization (L1 or L2) is essential** to prevent overfitting and handle separation
-
-5. **Evaluation requires careful metric selection** — don't just use accuracy, especially with imbalanced data
-
----
+1. Why does the gradient of the binary cross-entropy loss, $\nabla_\theta J(\theta) = \frac{1}{m}\mathbf X^T(h_\theta(\mathbf X)-\mathbf y)$, have the exact same algebraic form as linear regression's gradient, even though $h_\theta$ is nonlinear? What does this say about the relationship between the choice of loss function and the choice of link function (sigmoid) in this derivation?
+2. If two features are perfectly correlated, what happens to the shape of $J(\theta)$'s minimum (a unique point vs. a valley), and how would L2 regularization change the answer? (Connect this back to `04-regularization`'s multicollinearity discussion.)
+3. A colleague trains a logistic regression classifier and reports 99.2% accuracy, but the positive class is only 0.5% of the data. What single number would you ask for next, and why might accuracy alone be actively misleading here?
+4. Explain, using the log-odds framing, why doubling every feature's scale (without changing the underlying relationship) changes the fitted coefficients $\theta_j$ but does not change the model's predicted probabilities or decision boundary — and why this is *not* the same as saying feature scaling doesn't matter for logistic regression.
+5. Two datasets are both linearly separable, but in one the classes are separated by a wide gap and in the other by a razor-thin gap. Unregularized logistic regression fits both perfectly on training data with $\|\theta\|\to\infty$ in both cases — what does this suggest about why logistic regression alone (unlike `07-svm`) doesn't distinguish "generalizes well" from "merely separates training data"?
