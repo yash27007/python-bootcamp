@@ -224,6 +224,9 @@ impurity (weighted by node sample count) across all trees and all splits on feat
 normalize so importances sum to 1:
 $$\text{Importance}(j) = \frac{1}{B} \sum_{b=1}^B \sum_{\text{nodes splitting on } j} \frac{N_{node}}{N} \Delta \text{Impurity}$$
 
+where $\Delta \text{Impurity} = \text{Impurity}_{parent} - \frac{N_{left}}{N_{node}} \text{Impurity}_{left} - \frac{N_{right}}{N_{node}} \text{Impurity}_{right}$
+is the impurity reduction that node's split achieved.
+
 MDI is fast but biased toward high-cardinality features (e.g. a random ID column can look important
 just because it can always create a perfect split).
 
@@ -367,6 +370,8 @@ notebook.
   space).
 - **Robust to outliers** — tree splits are based on ordering samples, not on distances/magnitudes, so
   extreme values distort a Random Forest far less than they distort linear/distance-based models.
+- **Handles mixed feature types** — like its constituent trees, a random forest works directly with
+  both numerical and categorical data without special preprocessing.
 - **Handles high dimensionality reasonably well** — feature subsampling means no single tree needs to
   search all $p$ features, which helps when $p$ is large relative to $n$.
 - **Trains in parallel** — because the $B$ trees are trained independently, fitting scales across CPU
@@ -383,7 +388,13 @@ notebook.
 | Training speed | Fast | Slower ($\approx B\times$, parallelizable) |
 | Prediction speed | Fast | Slower (runs all $B$ trees) |
 | Feature importance | Basic (single tree's splits) | Robust (averaged over $B$ trees + OOB) |
-| Missing values | Need imputation | Need imputation (scikit-learn) |
+| Missing values | Need imputation | Need imputation (scikit-learn)$^\dagger$ |
+
+$^\dagger$ Correction from the original version of these notes, which claimed Random Forest "can
+handle [missing values] approximately." Scikit-learn's `RandomForestClassifier`/`Regressor` do not
+natively handle missing values — rows/features with NaNs still need imputation before fitting.
+(Some other tree-ensemble libraries, e.g. XGBoost/LightGBM, do handle missing values natively — see
+`## Failure modes` above.)
 
 ## Mental model
 
