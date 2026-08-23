@@ -210,3 +210,17 @@ __marimo__/
 # Datasets
 *.csv
 *.xlxs
+
+# Generated model/tracking artifacts (regenerate via each topic's train_*.py /
+# *_demo.py script — real output from running them is already pasted into
+# that topic's notes.md, so these binaries don't need to live in git)
+*.pkl
+*.pickle
+*.joblib
+*.h5
+*.keras
+*.onnx
+mlflow.db
+*.sqlite3
+
+.pytest_cache/
