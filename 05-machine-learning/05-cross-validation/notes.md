@@ -1,213 +1,144 @@
-# Cross Validation
+# 05 – Cross Validation
 
-## What is cross validation?
-Cross validation is a set of evaluation techniques that reuse the available data to estimate how well a model will generalize to unseen data. Instead of relying on a single train/test split (which can be noisy or unlucky), cross validation repeatedly trains the model on different subsets of the data and evaluates it on the remaining subset. The final performance is summarized across all splits.
+## Problem
 
-Think of it as **rotating the test set**: every example gets a chance to be in the test set at least once.
+You've trained a model. Before you ship it, you need to answer one question: **how well will it perform on data it has never seen?** You don't have production traffic yet — there is no held-out environment you can point the model at and simply read off the true error rate. All you have is the dataset you already collected. So the real problem is: **how do we estimate generalization error using only the data we already have, without access to the future data the model will actually be judged on?**
 
-## Why cross validation is used
+## Intuition
 
-### 1) Better estimate of generalization performance
-A single split can be overly optimistic or pessimistic depending on which points land in the test set. Cross validation averages performance across multiple splits, making the estimate more stable.
+The obvious idea: split your dataset into two pieces, train on one (say 80%), test on the other (20%), and report the test score. This is a genuine estimate of generalization — the model never saw the test 20% during training.
 
-### 2) Efficient use of limited data
-When the dataset is small, holding out a large test set wastes valuable training data. Cross validation uses most of the data for training in each fold while still evaluating on unseen data.
+But which 20%? If you happen to split off 20% that's easier than average (fewer edge cases, more "typical" examples), your reported score will be optimistic. If you happen to split off a harder-than-average 20%, your reported score will be pessimistic. Either way, you get **one number**, and that number depends on an arbitrary choice — which rows landed in the test set — that has nothing to do with how good the model actually is.
 
-### 3) Model selection and hyperparameter tuning
-Cross validation is the standard approach for comparing different models or hyperparameters. It reduces the risk of choosing a model that only performs well on a particular split.
+Cross-validation's answer: don't pick one split, **rotate through several**, so every example gets to be in the test set at least once, and report the *distribution* of scores (mean and spread) instead of a single lucky-or-unlucky number.
 
-### 4) Diagnosing bias and variance
-By looking at the variation of scores across folds, you can infer whether the model is sensitive to data changes (high variance) or consistently underfits (high bias).
+## Why simpler approaches fail
 
-## Basic workflow (K-Fold)
-1) Shuffle (optional) and split the dataset into K equal-sized folds.
-2) For each fold:
-	- Train on K-1 folds.
-	- Evaluate on the remaining fold.
-3) Aggregate the K scores (mean, std).
+A single train/test split has **high variance as an estimator**: re-running the same split procedure with a different random seed can shift the reported test score by several percentage points on a small dataset, purely from which rows ended up in the 20% test slice — not from any real change in model quality. This is a genuine statistical problem, not a coding inconvenience: you are trying to estimate a population quantity (true generalization error) from a sample, and a single split gives you a single realization of a random variable, with no sense of how much that realization could have differed by chance.
 
-The final reported metric is often the mean score (and its standard deviation).
+This matters most exactly when it's most tempting to skip cross-validation: small datasets, where a single 20% test set might be only a few dozen rows, and where an unlucky split can flip your comparison between two candidate models entirely. You need an estimate that isn't hostage to one random draw.
 
-## Types of cross validation (with examples)
+## Mathematical foundation
 
-### 1) Hold-out (train/test split)
-This is the simplest evaluation. It is not true cross validation but is often mentioned alongside it.
+Let $\hat{L}$ denote a test-set score computed from one split (e.g. accuracy, RMSE — sign convention doesn't matter). A single split's score is one sample of a random variable whose randomness comes entirely from which rows landed in train vs. test.
 
-**Example:**
-- Dataset: 1,000 rows
-- Split: 80% training (800) and 20% testing (200)
-- Train once, test once
+**K-Fold as averaging point estimates.** Partition the $N$ examples into $K$ disjoint folds $F_1, \dots, F_K$, each of size $\approx N/K$. For each fold $k$, train on all data except $F_k$, and evaluate on $F_k$ to get a point estimate $\hat{L}_k$. The K-Fold estimator is the mean of these $K$ point estimates:
+$$\hat{L}_{\text{CV}} = \frac{1}{K}\sum_{k=1}^{K} \hat{L}_k$$
 
-**Pros:** simple, fast
-**Cons:** high variance; result depends heavily on the split
+**Why averaging reduces variance.** If the $\hat{L}_k$ were independent with variance $\sigma^2$ each, the variance of their mean would be
+$$\text{Var}(\hat{L}_{\text{CV}}) = \frac{\sigma^2}{K}$$
+— i.e. averaging $K$ estimates shrinks variance by a factor of $K$ compared to relying on a single one ($K=1$). In reality the folds are *not* fully independent (they share overlapping training data — fold 1's training set and fold 2's training set overlap in $K-2$ folds' worth of data), so the true variance reduction is less than the naive $\sigma^2/K$, but the direction of the effect holds: averaging over rotated splits is a strictly lower-variance estimator of generalization error than any single split, at the cost of $K\times$ the compute (training $K$ models instead of 1).
 
-### 2) K-Fold Cross Validation
-Split data into K folds (commonly K=5 or K=10). Train K times, each time leaving out one fold for testing.
+**The mean ± std you compute across folds is not free information about the model's true variance** — see the LOOCV caveat below for the boundary case where this reasoning breaks.
 
-**Example:**
-- Dataset: 1,000 rows
-- K = 5
-- Each fold has 200 rows
-- Train on 800, test on 200, repeated 5 times
-- Final score = average of 5 test scores
+## Algorithm
 
-**Pros:** good balance between bias and variance
-**Cons:** can be expensive for large datasets or slow models
+**K-Fold (general form):**
+1. Shuffle (optional but usually recommended) and partition the $N$ examples into $K$ roughly equal folds.
+2. For $k = 1, \dots, K$:
+   - Train the model on all folds except $F_k$.
+   - Evaluate it on $F_k$, record score $\hat{L}_k$.
+3. Report $\hat{L}_{\text{CV}} = \text{mean}(\hat{L}_1, \dots, \hat{L}_K)$ and $\text{std}(\hat{L}_1, \dots, \hat{L}_K)$.
 
-### 3) Stratified K-Fold
-Used for classification when classes are imbalanced. Each fold preserves class proportions.
-
-**Example:**
-- Dataset: 1,000 rows
-- Class A: 900, Class B: 100
-- In each fold, ~90% A and ~10% B
-
-**Why it matters:** A normal K-Fold might create a fold with very few or no minority samples, causing unstable scores.
-
-### 4) Leave-One-Out (LOOCV)
-Each fold uses exactly one observation for testing and the rest for training. K equals the number of samples.
-
-**Example:**
-- Dataset: 100 rows
-- 100 folds
-- Train on 99, test on 1
-
-**Pros:** maximum training data per fold, almost unbiased estimate
-**Cons:** very expensive; high variance in scores; can be noisy for some models
-
-### 5) Leave-P-Out
-Generalization of LOOCV where P samples are left out for testing.
-
-**Example:**
-- Dataset: 50 rows
-- P = 2
-- Each iteration tests on a pair of samples
-
-**Pros:** more stable than LOOCV
-**Cons:** combinatorial explosion; rarely used for large datasets
-
-### 6) Repeated K-Fold
-Repeat K-Fold multiple times with different random shuffles to reduce variance.
-
-**Example:**
-- K = 5
-- Repeats = 3
-- Total evaluations = 15
-
-**Pros:** more robust estimate
-**Cons:** more computation
-
-### 7) Nested Cross Validation
-Used when hyperparameter tuning is involved. There are two loops:
-- Outer loop: estimates generalization performance.
-- Inner loop: selects hyperparameters.
-
-**Example:**
-- Outer 5-fold CV for performance
-- Inner 3-fold CV to pick best C for logistic regression
-
-**Why it matters:** prevents optimistic bias from tuning on the same folds you evaluate.
-
-### 8) Time Series Cross Validation (Rolling / Forward Chaining)
-Used for data with temporal order. You must respect time order and avoid training on future data.
-
-**Example (rolling):**
-- Train: months 1-3, test: month 4
-- Train: months 1-4, test: month 5
-- Train: months 1-5, test: month 6
-
-**Pros:** realistic for forecasting
-**Cons:** fewer independent test sets
-
-### 9) Group K-Fold
-Used when observations are grouped and groups must not be split across train/test.
-
-**Example:**
-- Dataset: medical records per patient
-- Groups: patient_id
-- All records of a patient must stay in one fold
-
-**Why it matters:** prevents data leakage when samples within a group are correlated.
-
-### 10) Monte Carlo / Shuffle-Split
-Randomly split data into train/test multiple times.
-
-**Example:**
-- Repeat 10 times
-- Each time: 80% train, 20% test
-- Average the 10 scores
-
-**Pros:** flexible train/test sizes
-**Cons:** some samples may never appear in test sets
-
-### 11) Bootstrap (for model stability)
-Randomly sample with replacement to create training sets; test on out-of-bag samples.
-
-**Example:**
-- Sample N rows with replacement as train
-- Evaluate on rows not selected (out-of-bag)
-
-**Pros:** useful for small datasets and estimating uncertainty
-**Cons:** not always appropriate for strict generalization error
-
-## Practical examples
-
-### Example 1: K-Fold for regression
-Suppose you have 1,000 housing records and want to compare linear regression vs. random forest.
-
-- Use 5-fold CV
-- Compute RMSE for each fold
-- Average RMSE across folds
-- Choose the model with lower mean RMSE (and preferably lower variance)
-
-This avoids making a decision based on a single lucky split.
-
-### Example 2: Stratified K-Fold for classification
-You have a fraud detection dataset with 98% non-fraud and 2% fraud.
-
-- Use stratified 5-fold CV
-- Evaluate with precision, recall, and F1
-- Ensure each fold has ~2% fraud
-
-This gives a more trustworthy estimate of minority-class performance.
-
-### Example 3: Time Series CV for forecasting
-You want to predict daily sales.
-
-- Start with first 6 months for training
-- Predict the next month
-- Expand the training window and repeat
-
-This respects the temporal order and simulates real forecasting.
-
-## Common pitfalls and best practices
-
-### Avoid data leakage
-- Always apply preprocessing (scaling, encoding, feature selection) **inside** each training fold.
-- In scikit-learn, use `Pipeline` to ensure transformations are fit only on training folds.
-
-### Keep a final hold-out test set
-Even with cross validation, it is good practice to keep a final unseen test set for a last unbiased evaluation.
-
-### Choose a metric aligned with the task
-- Classification: accuracy may be misleading on imbalanced data; use F1, ROC-AUC, PR-AUC.
-- Regression: use MAE, RMSE, or R2 depending on the business context.
-
-### Watch for high variance
-If scores vary widely across folds, the model may be unstable. Consider simpler models, more data, or repeated CV.
-
-## Quick comparison table
+**Variants**, all following the same "rotate the test fold" skeleton with different partitioning rules:
 
 | Method | Best for | Key idea | Cost |
 | --- | --- | --- | --- |
 | Hold-out | Quick baseline | Single split | Low |
 | K-Fold | General use | Rotate test fold | Medium |
-| Stratified K-Fold | Imbalanced classes | Preserve class ratios | Medium |
-| LOOCV | Very small data | Leave 1 out | High |
-| Repeated K-Fold | More stability | Repeat splits | High |
-| Nested CV | Model selection | Inner/outer loops | High |
-| Time Series CV | Temporal data | Forward chaining | Medium |
-| Group K-Fold | Grouped data | Keep groups intact | Medium |
+| Stratified K-Fold | Imbalanced classes | Preserve class ratios per fold | Medium |
+| LOOCV | Very small data | Leave exactly 1 out ($K = N$) | High |
+| Repeated K-Fold | More stability | Repeat K-Fold with different shuffles | High |
+| Nested CV | Model selection | Inner loop tunes, outer loop evaluates | High |
+| Time Series CV | Temporal data | Forward chaining, respect time order | Medium |
+| Group K-Fold | Grouped/correlated data | Keep each group in a single fold | Medium |
 
-## Summary
-Cross validation is essential for reliable model evaluation and selection. It reduces the randomness of a single split, uses data efficiently, and helps detect overfitting. The choice of cross validation method depends on the data structure (imbalanced, grouped, temporal) and the computational budget.
+- **Stratified K-Fold** preserves class proportions in every fold — necessary for imbalanced classification, otherwise a fold could randomly end up with almost no minority-class examples.
+- **LOOCV** is the $K=N$ extreme: train on $N-1$ points, test on the 1 left out, repeat for every point.
+- **Nested CV** wraps an inner CV loop (for hyperparameter search) inside an outer CV loop (for the final performance estimate), so the number used to select hyperparameters is never the same number reported as the model's generalization estimate — avoiding optimistic bias.
+- **Group K-Fold** and **Time Series CV** modify the *partitioning rule* to respect a constraint the plain random split would violate (correlated groups; temporal ordering), preventing information leakage from test back into train.
+
+## From-scratch implementation
+
+The mechanic underlying every K-Fold variant is just index arithmetic: given $N$ and $K$, decide which row indices go into each fold's test set, and everything else goes into that fold's training set.
+
+```python
+import numpy as np
+
+def kfold_indices(n, k, shuffle=True, seed=42):
+    """Yield (train_idx, test_idx) arrays for k-fold CV over n samples."""
+    idx = np.arange(n)
+    if shuffle:
+        rng = np.random.default_rng(seed)
+        rng.shuffle(idx)
+
+    fold_sizes = np.full(k, n // k, dtype=int)
+    fold_sizes[: n % k] += 1  # distribute the remainder across the first folds
+
+    current = 0
+    for size in fold_sizes:
+        test_idx = idx[current : current + size]
+        train_idx = np.concatenate([idx[:current], idx[current + size:]])
+        yield np.sort(train_idx), np.sort(test_idx)
+        current += size
+
+# sanity check against sklearn's KFold
+from sklearn.model_selection import KFold
+n, k = 23, 5
+scratch_folds = list(kfold_indices(n, k, shuffle=False))
+sk_folds = list(KFold(n_splits=k, shuffle=False).split(np.arange(n)))
+for (my_tr, my_te), (sk_tr, sk_te) in zip(scratch_folds, sk_folds):
+    assert np.array_equal(my_tr, sk_tr) and np.array_equal(my_te, sk_te)
+print("scratch kfold_indices matches sklearn.KFold exactly")
+```
+
+This handful of lines is the entire mechanic that every CV variant in the table above builds on: `StratifiedKFold` adds a class-balance constraint to which indices go where; `GroupKFold` adds a group-membership constraint; `TimeSeriesSplit` replaces random partitioning with a forward-chaining rule. None of them do anything conceptually beyond "produce train/test index arrays" — the library versions differ only in *which* indices they're allowed to put together.
+
+## Practical implementation
+
+`05-cross-validation/cross-validation.ipynb` runs the library versions of these ideas on `load_breast_cancer`, mapped back to the mechanic above:
+
+- **`KFold(n_splits=5, shuffle=True, random_state=42)`** — the direct library equivalent of `kfold_indices` above, wired into `cross_val_score` to train and score a `RandomForestClassifier` across all 5 rotations automatically.
+- **`StratifiedKFold`** — same rotation, but each fold's test indices are chosen to preserve the overall class balance, which the from-scratch version above doesn't do (it only respects size, not class labels).
+- **`LeaveOneOut`** — the $K=N$ extreme; the notebook runs all ~569 folds (one per sample) and reports mean ± std of the per-sample (0/1) scores.
+- **`GridSearchCV` / `RandomizedSearchCV`** — hyperparameter search that internally runs K-Fold (5-fold, Stratified for classification) for every candidate hyperparameter combination, exhaustively for `GridSearchCV`, via random sampling of a fixed budget for `RandomizedSearchCV`.
+
+## Experiment
+
+**Hypothesis (stated before running):** the K-Fold mean±std should be a more stable/trustworthy estimate of generalization accuracy than any single split's score — i.e. individual fold scores should scatter around the mean rather than agreeing exactly, demonstrating why reporting a single split's number would have been misleading.
+
+**Setup:** `RandomForestClassifier(n_estimators=100, random_state=42)` evaluated with `KFold(5)`, `StratifiedKFold(5)`, and `LeaveOneOut()` on `load_breast_cancer` (569 samples, binary classification, class balance 212/357).
+
+**Actual result** (from the executed notebook): K-Fold produced 5 per-fold accuracies with a non-zero spread around their mean (mean ± std reported directly in the notebook's printed summary), confirming that any single one of those 5 folds, taken alone, would have reported a different number than the mean. Stratified K-Fold's mean was very close to plain K-Fold's here, because `load_breast_cancer`'s class imbalance (37% minority class) is mild enough that random folds already come out roughly balanced. LOOCV's reported std was computed over 569 individual 0/1 scores.
+
+**Interpretation:** the non-zero spread across K-Fold's 5 scores is direct empirical evidence for the "why simpler approaches fail" argument — a single split could have landed on any one of those 5 values, over- or under-stating the model's real performance.
+
+**Limitations:** this was run once, with one fixed `random_state`; the comparison doesn't itself quantify *how much* variance a single hold-out split would have shown without repeating that hold-out split many times (`ShuffleSplit`/Monte Carlo CV would make that comparison explicit — not run here, but a natural next experiment).
+
+### Resolved caveat: LOOCV's per-fold "std" is not comparable to K-Fold's
+
+LOOCV's per-fold scores are 0/1 (each fold tests exactly one sample, so the model is either right or wrong on that one point). The std computed across those 569 binary outcomes reflects **which individual samples happen to be easy or hard to classify** — essentially per-sample noise in the dataset — not the model's sensitivity to *which training set it saw*, since LOOCV's $N-1$ training sets overlap almost completely with each other (any two LOOCV training sets differ by only 2 rows out of $N-1$). K-Fold's per-fold std, by contrast, reflects variation across genuinely different training sets (each K-Fold training set differs from another by roughly $2N/K$ rows) evaluated on genuinely different multi-sample test sets. **The two stds are measuring different things and should not be read side-by-side as "LOOCV is more/less stable than K-Fold."** If you want an estimate of how sensitive a model is to which training data it saw, K-Fold's fold-to-fold spread (or repeated K-Fold) is the right tool; LOOCV's spread instead tells you about the distribution of per-example difficulty.
+
+## Failure modes
+
+- **A single train/test split** can accidentally be lucky or unlucky — the entire motivation for this topic.
+- **LOOCV has high variance for unstable models**, despite each individual fold using almost all the data. Because the $N$ training sets in LOOCV overlap almost entirely, the fitted models across folds are highly correlated with each other; for a model whose fit is sensitive to small perturbations in the training set (e.g. deep unpruned trees, high-variance models generally), that correlation means LOOCV's *overall* estimate is not the "almost unbiased, therefore automatically better" answer it's sometimes assumed to be — it trades bias for a different variance profile, and its per-fold std should not be interpreted the way K-Fold's is (see caveat above).
+- **Data leakage through preprocessing.** Fitting a scaler, encoder, or feature selector on the *whole* dataset before splitting into folds leaks test-fold information into training, inflating every reported score. Always fit preprocessing only on each fold's training portion (`Pipeline` in scikit-learn enforces this automatically).
+- **Ignoring structure in the data.** Plain K-Fold on grouped data (e.g. multiple rows per patient) or temporal data (e.g. daily sales) can put correlated or future information into the training fold, again leaking information and producing an optimistic estimate. Group K-Fold and Time Series CV exist specifically to prevent this.
+
+## Real-world usage
+
+- Cross-validation is the standard tool for comparing candidate models or hyperparameter settings before choosing what to ship — almost every `GridSearchCV`/`RandomizedSearchCV`-style hyperparameter search in production ML pipelines uses K-Fold or Stratified K-Fold internally.
+- Nested CV is used whenever a paper or production report needs to claim "this is our unbiased estimate of generalization performance" *and* the model involved hyperparameter tuning — using the same folds for tuning and final reporting is a common, silent source of overoptimistic published results.
+- Time Series CV / forward-chaining validation is the only correct approach for forecasting models — using ordinary K-Fold on time-ordered data trains on the future to predict the past, an error that would never show up as a bug, only as a model that mysteriously underperforms once deployed.
+
+## Mental model
+
+Cross-validation trades compute for a lower-variance estimate of a number you can't otherwise observe — the model's true generalization error.
+
+## Questions to think about
+
+1. You have 200 rows and want to compare two candidate models. Would you prefer 5-fold or 10-fold CV, and what's the tradeoff you're making as $K$ increases toward $N$?
+2. A colleague reports "LOOCV gave us a lower std across folds than 5-fold CV, so LOOCV is the more reliable estimate." Using the caveat above, explain what's wrong with that conclusion.
+3. You're building a model to predict tomorrow's stock price from the last 30 days of prices. Why would plain `KFold(shuffle=True)` silently produce a misleadingly good CV score, and what would you use instead?
+4. Suppose fitting your `StandardScaler` on the full dataset before running K-Fold changes your reported accuracy from 91% to 94%. Which number is correct, and why?
