@@ -84,9 +84,11 @@ KNN is known as a **"lazy learner"**. Unlike Linear Regression or SVMs, KNN does
    **Regression:** return the (optionally weighted) mean of the target values among those $K$ points.
 5. Repeat steps 2–4 independently for every new query point — there is no reuse of computation across predictions beyond the stored training data itself.
 
+A useful side effect of the majority-vote rule in step 4: KNN **naturally handles multi-class classification** with no algorithmic changes at all. The vote simply counts labels among the $K$ neighbors and returns whichever class is most common, regardless of whether there are 2 classes or 200 — unlike, say, plain logistic regression, which is inherently binary and needs an explicit extension (one-vs-rest, or a softmax/multinomial reformulation) to handle more than two classes.
+
 ## 6. From-scratch implementation
 
-`knn_from_scratch.ipynb` implements the algorithm above directly in NumPy on a small toy 2D dataset, with no scikit-learn model involved:
+`knn-from-scratch.ipynb` implements the algorithm above directly in NumPy on a small toy 2D dataset, with no scikit-learn model involved:
 
 1. **Pairwise Euclidean distances** from a query point to every training point, computed directly from the Euclidean formula in Section 4 using vectorized NumPy operations (`np.linalg.norm` over broadcast differences).
 2. **k-nearest selection** — `np.argsort` on the distance array, taking the first $K$ indices.
