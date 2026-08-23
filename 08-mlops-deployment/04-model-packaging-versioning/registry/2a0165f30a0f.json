@@ -1,0 +1,19 @@
+{
+  "requested_name": "model.pkl",
+  "hash": "2a0165f30a0f6d7b28423aeaafe07570e6344d24913913105447d6b156a0a5b1",
+  "short_hash": "2a0165f30a0f",
+  "model_file": "2a0165f30a0f.pkl",
+  "registered_at": "2026-08-23T18:09:14.064101+00:00",
+  "metric_name": "accuracy",
+  "metric_value": 0.8666666666666667,
+  "library_versions": {
+    "python": "3.13.9",
+    "scikit-learn": "1.8.0",
+    "joblib": "1.5.3",
+    "numpy": "2.4.4"
+  },
+  "hyperparameters": {
+    "C": 0.01
+  },
+  "training_data": "sklearn.datasets.load_iris (random_state=0 split)"
+}
