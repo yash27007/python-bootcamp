@@ -7,7 +7,7 @@
 | LSTM Training Process | ✅ Complete |
 | GRU Architecture | ✅ Complete |
 | Bidirectional RNN | ✅ Complete |
-| Stock Price Prediction Project (LSTM) | ✅ Complete |
+| Windowed Time-Series Forecasting (LSTM/GRU/BiLSTM) | ✅ Complete |
 
 ## Why LSTM?
 
@@ -74,6 +74,6 @@ In Keras this is a simple wrapper: `layers.Bidirectional(layers.LSTM(units))`. I
 
 `lstm-gru-time-series.ipynb` compares plain `LSTM`, plain `GRU`, and `Bidirectional(LSTM(...))` head-to-head on the same synthetic time-series task so these tradeoffs can be observed directly in test MSE and predicted-vs-actual plots.
 
-## Stock Price Prediction Project (LSTM)
+## Windowed Time-Series Forecasting (LSTM/GRU/BiLSTM)
 
 Real stock price data requires an external download, which is outside this course's "standard built-ins only" constraint. Instead, `lstm-gru-time-series.ipynb` uses the same **windowed sequence-prediction framing** that a stock-price predictor would use — a numpy-generated, reproducible noisy sine wave (`np.random.seed` fixed for reproducibility) standing in for a smoothly-trending-but-noisy time series like a stock price. The task is: given a sliding window of the last $N$ time steps, predict the next value. This is exactly the framing used in real univariate time-series forecasting (stock prices, sensor readings, weather), and the notebook trains and compares `LSTM`, `GRU`, and `Bidirectional(LSTM(...))` models on it, reporting test MSE for all three and plotting predicted-vs-actual curves.

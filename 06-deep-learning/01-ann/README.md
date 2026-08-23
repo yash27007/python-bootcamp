@@ -2,13 +2,13 @@
 
 | Topic | Status |
 |-------|--------|
-| Perceptron Intuition | 🚧 Coming soon |
-| ANN Architecture & Forward Propagation | 🚧 Coming soon |
-| Backpropagation & Weight Updates | 🚧 Coming soon |
-| Activation Functions (Sigmoid, Tanh, ReLU, Leaky ReLU, ELU, Softmax) | 🚧 Coming soon |
-| Loss vs Cost Function | 🚧 Coming soon |
-| Regression & Classification Loss Functions | 🚧 Coming soon |
-| Optimisers (SGD, Momentum, AdaGrad, RMSProp, Adam) | 🚧 Coming soon |
-| Vanishing/Exploding Gradient Problems | 🚧 Coming soon |
-| Weight Initialisation & Dropout | 🚧 Coming soon |
-| ANN Regression & Classification Projects | 🚧 Coming soon |
+| Perceptron Intuition | ✅ Complete |
+| ANN Architecture & Forward Propagation | ✅ Complete |
+| Backpropagation & Weight Updates | ✅ Complete |
+| Activation Functions (Sigmoid, Tanh, ReLU, Leaky ReLU, ELU, Softmax) | ✅ Complete |
+| Loss vs Cost Function | ✅ Complete |
+| Regression & Classification Loss Functions | ✅ Complete |
+| Optimisers (SGD, Momentum, AdaGrad, RMSProp, Adam) | ✅ Complete |
+| Vanishing/Exploding Gradient Problems | ✅ Complete |
+| Weight Initialisation & Dropout | ✅ Complete |
+| ANN Regression & Classification Projects | ✅ Complete |

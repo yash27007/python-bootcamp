@@ -2,8 +2,8 @@
 
 | Topic | Status |
 |-------|--------|
-| RNN Architecture (vs ANN) | 🚧 Coming soon |
-| Forward & Backward Propagation Through Time | 🚧 Coming soon |
-| Problems with Vanilla RNN | 🚧 Coming soon |
-| Word Embedding Layers | 🚧 Coming soon |
-| IMDB Sentiment Analysis (Simple RNN) | 🚧 Coming soon |
+| RNN Architecture (vs ANN) | ✅ Complete |
+| Forward & Backward Propagation Through Time | ✅ Complete |
+| Problems with Vanilla RNN | ✅ Complete |
+| Word Embedding Layers | ✅ Complete |
+| IMDB Sentiment Analysis (Simple RNN) | ✅ Complete |

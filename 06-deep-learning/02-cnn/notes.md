@@ -5,7 +5,7 @@
 | CNN Intuition (Human Brain vs CNN) | ✅ Complete |
 | Images, Convolution, Padding, Pooling | ✅ Complete |
 | Flattening & Fully Connected Layers | ✅ Complete |
-| CNN Classification Project + Streamlit Deployment | ✅ Complete |
+| CNN Classification Project | ✅ Complete |
 
 ## CNN Intuition (Human Brain vs CNN)
 
@@ -60,8 +60,8 @@ Convolutional layers act as an automatic, learned feature extractor; the dense l
 - **Local connectivity:** each output value depends only on a small local patch of the input, matching the local/spatial structure of images (nearby pixels are correlated; distant pixels usually aren't directly related) — a `Dense` layer ignores this structure entirely and treats every pixel as independent.
 - **Hierarchical feature learning:** stacking conv→pool blocks lets the network build increasingly abstract representations (edges → textures → parts → objects) without hand-engineering features, unlike classical computer vision pipelines.
 
-## CNN Classification Project + Streamlit Deployment
+## CNN Classification Project
 
 `cnn-image-classification.ipynb` trains a Keras `Sequential` CNN (`Conv2D` + `MaxPooling2D` stack, followed by `Flatten` and `Dense` layers) on `tf.keras.datasets.fashion_mnist` — 10 classes of clothing items in $28\times28$ grayscale images. The notebook covers: normalizing pixel values, building and training the CNN, plotting training/validation accuracy and loss curves, reporting test accuracy, and visualizing a grid of sample test images with their true vs. predicted labels.
 
-A trained CNN like this is a natural candidate for a lightweight **Streamlit** web app: the model is serialized (`model.save(...)`), loaded in a Streamlit script, and wrapped with a simple UI (`st.file_uploader` for an image, `st.image` to display it, and the model's `predict()` output rendered with `st.bar_chart` or `st.write`) so a user can upload a clothing image and see the predicted class and confidence interactively. This deployment step is a natural follow-on exercise once the notebook's saved model exists, and is outside the scope of the notebook itself.
+> **Note:** a trained CNN like this is a natural candidate for a lightweight **Streamlit** web app: the model is serialized (`model.save(...)`), loaded in a Streamlit script, and wrapped with a simple UI (`st.file_uploader` for an image, `st.image` to display it, and the model's `predict()` output rendered with `st.bar_chart` or `st.write`) so a user can upload a clothing image and see the predicted class and confidence interactively. This deployment step is a suggested follow-on exercise, not delivered as part of this notebook — no Streamlit app is included here.
