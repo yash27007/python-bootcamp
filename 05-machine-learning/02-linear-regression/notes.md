@@ -56,7 +56,47 @@ The first term does not depend on $\theta$. So maximizing $\log L(\theta)$ over 
 
 **Conclusion:** minimizing squared error is not an arbitrary convention — it is the maximum-likelihood parameter estimate under the assumption of linear signal plus i.i.d. Gaussian noise. If you accept that noise model (and it's frequently a reasonable one), least squares is provably the "correct" way to fit, not merely a convenient one. This also explains why squared error weights large residuals so heavily: a Gaussian's density falls off as $\exp(-\text{error}^2)$, so under this noise model, large errors are considered disproportionately unlikely, and the objective reflects that.
 
-### The normal equation (closed-form solution)
+### The normal equation: scalar case first
+
+Before jumping to the general matrix form, it's worth deriving the closed-form solution by hand for the single-feature case — the algebra is short, and it makes the general result feel less like a formula pulled out of nowhere.
+
+For simple linear regression, write the model as $\hat y = \beta_0 + \beta_1 x$ (using $\beta$ here to match the common convention for the scalar case). The OLS objective is to minimize the **sum of squared errors (SSE)**:
+
+$$S(\beta_0, \beta_1) = \sum_{i=1}^{m} \left(y^{(i)} - (\beta_0 + \beta_1 x^{(i)})\right)^2$$
+
+To find the minimum, set both partial derivatives to zero.
+
+**1) Partial derivative with respect to $\beta_0$:**
+
+$$\frac{\partial S}{\partial \beta_0} = -2 \sum_{i=1}^{m} \left(y^{(i)} - \beta_0 - \beta_1 x^{(i)}\right) = 0$$
+
+This gives the first normal equation:
+
+$$\sum_{i=1}^{m} y^{(i)} = m \beta_0 + \beta_1 \sum_{i=1}^{m} x^{(i)}$$
+
+**2) Partial derivative with respect to $\beta_1$:**
+
+$$\frac{\partial S}{\partial \beta_1} = -2 \sum_{i=1}^{m} x^{(i)} \left(y^{(i)} - \beta_0 - \beta_1 x^{(i)}\right) = 0$$
+
+This gives the second normal equation:
+
+$$\sum_{i=1}^{m} x^{(i)} y^{(i)} = \beta_0 \sum_{i=1}^{m} x^{(i)} + \beta_1 \sum_{i=1}^{m} (x^{(i)})^2$$
+
+Now define the sample means:
+
+$$\bar{x} = \frac{1}{m} \sum_{i=1}^{m} x^{(i)}, \quad \bar{y} = \frac{1}{m} \sum_{i=1}^{m} y^{(i)}$$
+
+Solving the two normal equations simultaneously yields the closed-form solution:
+
+$$\beta_1 = \frac{\sum_{i=1}^{m} (x^{(i)} - \bar{x})(y^{(i)} - \bar{y})}{\sum_{i=1}^{m} (x^{(i)} - \bar{x})^2} = \frac{S_{xy}}{S_{xx}}$$
+
+$$\beta_0 = \bar{y} - \beta_1 \bar{x}$$
+
+where $S_{xy} = \sum (x^{(i)} - \bar{x})(y^{(i)} - \bar{y})$ is the covariance numerator and $S_{xx} = \sum (x^{(i)} - \bar{x})^2$ is the variance numerator of $x$. Interpretation: $\beta_1$ measures how $y$ changes with $x$ (the slope), and $\beta_0$ shifts the line so it passes through the point of averages $(\bar x, \bar y)$.
+
+### The normal equation: general matrix form
+
+The scalar derivation above generalizes directly once you stop treating $\beta_0$ and $\beta_1$ as separate scalars and instead stack every parameter (including the intercept) into one vector $\theta$, and every feature (including the constant $1$ column) into the design matrix $\mathbf X$.
 
 $J(\theta)$ is convex and differentiable, so its minimum occurs exactly where the gradient is zero. Write $J(\theta) = \frac{1}{2m}\|\mathbf X\theta - \mathbf y\|^2$ and differentiate with respect to the vector $\theta$:
 
@@ -82,6 +122,18 @@ $$\theta := \theta - \alpha \nabla_\theta J(\theta) = \theta - \alpha \cdot \fra
 with $\alpha$ the learning rate. Per-coordinate, this is the familiar update
 $$\theta_j := \theta_j - \alpha \cdot \frac{1}{m}\sum_{i=1}^m \left(h_\theta(x^{(i)}) - y^{(i)}\right)x_j^{(i)}$$
 Because $J$ is convex with no local minima other than the global one, gradient descent with a sufficiently small $\alpha$ is guaranteed to converge to the same $\hat\theta$ the normal equation gives exactly — this is not a coincidence, it's two different methods finding the same unique minimum of the same convex function, and the from-scratch implementation below verifies this numerically.
+
+### Evaluation metrics
+
+$J(\theta)$ is the objective *optimized during fitting*, but it's not the only lens for judging a fitted model afterward — different metrics answer different questions about how good the predictions actually are.
+
+- **MSE (mean squared error):** $\text{MSE} = \frac{1}{m}\sum_{i=1}^m (\hat y^{(i)} - y^{(i)})^2$ — strongly penalizes large errors (because they're squared), smooth and differentiable, same quantity $J(\theta)$ optimizes (up to the $\frac12$ factor).
+- **MAE (mean absolute error):** $\text{MAE} = \frac{1}{m}\sum_{i=1}^m |\hat y^{(i)} - y^{(i)}|$ — more robust to outliers than MSE, since one huge error contributes linearly rather than quadratically; not differentiable at zero, which makes it less convenient as a direct optimization target for gradient-based methods.
+- **RMSE (root mean squared error):** $\text{RMSE} = \sqrt{\text{MSE}}$ — same unit as the target variable (unlike MSE, which is in squared units), so it's easier to interpret directly, while still penalizing large errors like MSE does.
+- **$R^2$ (coefficient of determination):** $R^2 = 1 - \dfrac{\sum_{i=1}^m (y^{(i)} - \hat y^{(i)})^2}{\sum_{i=1}^m (y^{(i)} - \bar y)^2}$ — the proportion of the target's variance explained by the model, relative to always predicting the mean $\bar y$. $R^2 = 1$ is a perfect fit; $R^2 = 0$ means the model is no better than predicting $\bar y$ for everything; negative values mean the model is actively worse than that trivial baseline.
+- **Adjusted $R^2$:** $\bar R^2 = 1 - (1 - R^2)\cdot \dfrac{n-1}{n-p-1}$, where $n$ is the number of samples and $p$ the number of features — $R^2$ alone never decreases when you add a feature, even a useless one (more flexibility can only help fit the training data at least as well), so it can't be used on its own to judge whether a feature was worth adding. Adjusted $R^2$ corrects for this by penalizing additional features, decreasing when a new feature doesn't improve the fit enough to be worth the added complexity.
+
+Choosing among them: MAE when every error should count equally regardless of size; RMSE when large errors are especially costly and you want a result in the original units; MSE when you want a smooth objective for optimization (which is why it's what $J(\theta)$ uses); $R^2$/adjusted $R^2$ when the question is "how much of the variance did the model actually explain," particularly useful for comparing models on the same dataset.
 
 ## Algorithm
 
