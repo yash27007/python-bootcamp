@@ -36,6 +36,25 @@ picked by default.
   becomes a serious problem once a column has hundreds or thousands of distinct values (a ZIP
   code, a user ID) — measured concretely below.
 
+## Mathematical foundation
+
+This section is titled "Mathematical foundation" but is genuinely thin for this topic: encoding
+is a representational choice, not a derivation. The one piece of real structure worth stating
+precisely is what one-hot encoding actually constructs. For a categorical feature with $k$
+distinct values $\{c_1, \dots, c_k\}$, one-hot encoding is the map
+
+$$
+\text{onehot}(c_i) = e_i \in \{0,1\}^k, \qquad (e_i)_j = \mathbb{1}[j = i]
+$$
+
+i.e. each category is sent to a standard basis vector of $\mathbb{R}^k$. This is exactly what
+makes it "safe" for nominal data — every pair of distinct categories $e_i, e_j$ is equidistant
+($\lVert e_i - e_j \rVert_2 = \sqrt{2}$ for all $i \ne j$), so the encoding imposes no false
+ordering or magnitude, unlike a naive integer label encoding $c_i \mapsto i$ which imposes both.
+Cardinality growth follows directly from the definition: encoding a $k$-category column produces
+$k$ new columns, which is the dimensionality-blowup problem quantified in the From-scratch and
+Failure modes sections below.
+
 ## Algorithm
 
 **One-hot encoding:**
