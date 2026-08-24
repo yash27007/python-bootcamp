@@ -35,3 +35,16 @@ dev = [
 
 [tool.uv]
 override-dependencies = ["pandas>=3.0.2"]
+
+# No GPU is used anywhere in this repo (the PyTorch topic's GPU/mixed-precision
+# content is written and reviewed but explicitly documented as not executed —
+# see 09-pytorch/04-gpu-mixed-precision-profiling/notes.md). Pull the CPU-only
+# torch build so `uv sync` doesn't download ~1GB of unused CUDA/cuDNN/NCCL
+# wheels — keeps the repo lightweight for anyone cloning it.
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
