@@ -22,24 +22,125 @@ A structured, hands-on course repository covering everything from Python basics 
 
 ## Curriculum
 
-| Section | Topic | Status | Contents |
-|---------|-------|--------|----------|
-| [01](./01-python-foundation/) | **Python Foundation** | ✅ Complete | Basics, Control Flow, Data Structures, Functions, Modules, File I/O, OOP, Advanced, Logging, Threading, Memory, Flask, Streamlit |
-| [02](./02-statistics/) | **Statistics** | ✅ Complete | Descriptive Stats, Probability, Inferential Statistics |
-| [03](./03-data-analysis/) | **Data Analysis** | ✅ Complete | NumPy, Pandas, Data Manipulation, Reading Data, Matplotlib, Seaborn, SQLite, EDA Projects |
-| [04](./04-feature-engineering/) | **Feature Engineering** | ✅ Complete | Missing Values, Outliers, Encoding, Imbalanced Data |
-| [05](./05-machine-learning/) | **Machine Learning** | ✅ Complete | Linear→Polynomial Regression, Regularization, Logistic, SVM, Naive Bayes, KNN, Trees, Ensembles, Boosting, XGBoost, PCA, K-Means, Hierarchical, DBSCAN, Isolation Forest, LOF |
-| [06](./06-deep-learning/) | **Deep Learning** | ✅ Complete | ANN, CNN, RNN, LSTM/GRU, Attention & Transformers |
-| [07](./07-nlp/) | **NLP** | ✅ Complete | Text Preprocessing, BOW/TF-IDF, Word2Vec, Deep Learning NLP, Transformers & HuggingFace |
-| [08](./08-mlops-deployment/) | **MLOps & Deployment** | ✅ Complete | Docker, Git, Testing & CI, Model Packaging & Versioning, MLflow/DagsHub, DVC, BentoML, CI/CD, Monitoring |
-| [09](./09-pytorch/) | **PyTorch** | ✅ Complete | Tensors & Autograd, nn.Module & Training Loop, Datasets/DataLoaders & Checkpointing, GPU/Mixed Precision/Profiling |
-| [10](./10-distributed-data/) | **Distributed Data** | ✅ Complete | Why Distributed Processing, PySpark Local Mode, Streaming Fundamentals, Kafka |
-| [11](./11-generative-ai/) | **Generative AI** | ✅ Complete | GANs, Diffusion Models |
-| [12](./12-reinforcement-learning/) | **Reinforcement Learning** | ✅ Complete | MDPs & Bellman Equation, Q-Learning, Policy Gradients |
-| [13](./13-llms-from-scratch/) | **LLMs From Scratch** | ✅ Complete | Tokenizer (BPE) From Scratch, Pretraining Objective (Tiny GPT), Instruction Tuning |
-| [14](./14-multi-agent-systems/) | **Multi-Agent Systems** | ✅ Complete | Communication Protocols, Orchestration Patterns, Swarm Coordination (PSO) |
-| [15](./15-agent-skills-and-mcp/) | **Agent Skills & MCP** | ✅ Complete | Agent Skills & Progressive Disclosure, Model Context Protocol, Skills+MCP Agent Loop |
-| [projects](./projects/) | **Projects** | 🔄 Growing | Beginner: Titanic EDA, Iris Classifier, House Prices, Student Performance (all with notebooks) — bigger projects: [ml-spi](https://github.com/yash27007/ml-spi) |
+Every topic below links directly to its folder (`README.md` + `notes.md` + notebook/script). All 15 sections are ✅ Complete.
+
+1. **[Python Foundation](./01-python-foundation/)**
+   - [Basics](./01-python-foundation/01-basics/)
+   - [Control Flow](./01-python-foundation/02-control-flow/)
+   - [Data Structures](./01-python-foundation/03-data-structures/)
+   - [Functions](./01-python-foundation/04-functions/)
+   - [Modules & Packages](./01-python-foundation/05-modules-packages/)
+   - [File I/O & Exceptions](./01-python-foundation/06-file-exception/)
+   - [OOP](./01-python-foundation/07-oops/)
+   - [Advanced Concepts (Iterators/Generators)](./01-python-foundation/08-advanced-concepts/)
+   - [Logging](./01-python-foundation/09-logging/)
+   - [Multithreading & Concurrency](./01-python-foundation/10-multithreading/)
+   - [Memory Management](./01-python-foundation/11-memory-management/)
+   - [Flask](./01-python-foundation/12-flask/)
+   - [Streamlit](./01-python-foundation/13-streamlit/)
+
+2. **[Statistics](./02-statistics/)**
+   - [Descriptive Statistics](./02-statistics/01-descriptive-statistics/)
+   - [Probability](./02-statistics/02-probability/)
+   - [Inferential Statistics](./02-statistics/03-inferential-statistics/)
+
+3. **[Data Analysis](./03-data-analysis/)**
+   - [NumPy](./03-data-analysis/01-numpy/)
+   - [Pandas](./03-data-analysis/02-pandas/)
+   - [Data Manipulation](./03-data-analysis/03-data-manipulation/)
+   - [Reading Data (multiple sources)](./03-data-analysis/04-data-reading/)
+   - [Matplotlib](./03-data-analysis/05-matplotlib/)
+   - [Seaborn](./03-data-analysis/06-seaborn/)
+   - [SQLite](./03-data-analysis/07-sqlite/)
+   - [EDA Projects](./03-data-analysis/08-eda-projects/)
+
+4. **[Feature Engineering](./04-feature-engineering/)**
+   - [Missing Values](./04-feature-engineering/01-missing-values/)
+   - [Handling Outliers](./04-feature-engineering/02-handling-outliers/)
+   - [Data Encoding](./04-feature-engineering/03-data-encoding/)
+   - [Handling Imbalanced Data](./04-feature-engineering/04-handling-imbalanced-dataset/)
+
+5. **[Machine Learning](./05-machine-learning/)**
+   - [Introduction](./05-machine-learning/01-introduction/)
+   - [Linear Regression](./05-machine-learning/02-linear-regression/)
+   - [Polynomial Regression](./05-machine-learning/03-polynomial-regression/)
+   - [Regularization](./05-machine-learning/04-regularization/)
+   - [Cross-Validation](./05-machine-learning/05-cross-validation/)
+   - [Bias-Variance Tradeoff](./05-machine-learning/05b-bias-variance-tradeoff/)
+   - [Logistic Regression](./05-machine-learning/06-logistic-regression/)
+   - [SVM](./05-machine-learning/07-svm/)
+   - [Naive Bayes](./05-machine-learning/08-naive-bayes/)
+   - [KNN](./05-machine-learning/09-knn/)
+   - [Decision Tree](./05-machine-learning/10-decision-tree/)
+   - [Random Forest](./05-machine-learning/11-random-forest/)
+   - [AdaBoost](./05-machine-learning/12-adaboost/)
+   - [Gradient Boosting](./05-machine-learning/13-gradient-boosting/)
+   - [XGBoost](./05-machine-learning/14-xgboost/)
+   - [Unsupervised Learning (K-Means, Hierarchical, DBSCAN)](./05-machine-learning/15-unsupervised-learning/)
+   - [Anomaly Detection (Isolation Forest, LOF)](./05-machine-learning/16-anomaly-detection/)
+   - [PCA](./05-machine-learning/18-pca/)
+
+6. **[Deep Learning](./06-deep-learning/)**
+   - [ANN](./06-deep-learning/01-ann/)
+   - [CNN](./06-deep-learning/02-cnn/)
+   - [RNN](./06-deep-learning/03-rnn/)
+   - [LSTM/GRU](./06-deep-learning/04-lstm-gru/)
+   - [Attention & Transformers](./06-deep-learning/05-attention-transformers/)
+
+7. **[NLP](./07-nlp/)**
+   - [Text Preprocessing](./07-nlp/01-text-preprocessing/)
+   - [Feature Extraction (BOW/TF-IDF)](./07-nlp/02-feature-extraction/)
+   - [Word Embeddings (Word2Vec)](./07-nlp/03-word-embeddings/)
+   - [Deep Learning NLP](./07-nlp/04-deep-learning-nlp/)
+   - [Transformers & HuggingFace](./07-nlp/05-transformers-and-huggingface/)
+
+8. **[MLOps & Deployment](./08-mlops-deployment/)**
+   - [Docker](./08-mlops-deployment/01-docker/)
+   - [Git](./08-mlops-deployment/02-git/)
+   - [Testing & CI](./08-mlops-deployment/03-testing-ci/)
+   - [Model Packaging & Versioning](./08-mlops-deployment/04-model-packaging-versioning/)
+   - [MLflow / DagsHub (with DVC)](./08-mlops-deployment/05-mlflow-dagshub/)
+   - [BentoML](./08-mlops-deployment/06-bentoml/)
+   - [CI/CD](./08-mlops-deployment/07-cicd/)
+   - [Monitoring](./08-mlops-deployment/08-monitoring/)
+
+9. **[PyTorch](./09-pytorch/)**
+   - [Tensors & Autograd](./09-pytorch/01-tensors-and-autograd/)
+   - [nn.Module & Training Loop](./09-pytorch/02-nn-module-and-training-loop/)
+   - [Datasets/DataLoaders & Checkpointing](./09-pytorch/03-datasets-dataloaders-checkpointing/)
+   - [GPU / Mixed Precision / Profiling](./09-pytorch/04-gpu-mixed-precision-profiling/)
+
+10. **[Distributed Data](./10-distributed-data/)**
+    - [Why Distributed Processing](./10-distributed-data/01-why-distributed-processing/)
+    - [PySpark (Local Mode)](./10-distributed-data/02-pyspark-local-mode/)
+    - [Streaming Fundamentals](./10-distributed-data/03-streaming-fundamentals/)
+    - [Kafka](./10-distributed-data/04-kafka/)
+
+11. **[Generative AI](./11-generative-ai/)**
+    - [GANs](./11-generative-ai/01-gans/)
+    - [Diffusion Models](./11-generative-ai/02-diffusion-models/)
+
+12. **[Reinforcement Learning](./12-reinforcement-learning/)**
+    - [MDPs & Bellman Equation](./12-reinforcement-learning/01-mdps-and-bellman-equation/)
+    - [Q-Learning](./12-reinforcement-learning/02-q-learning/)
+    - [Policy Gradients](./12-reinforcement-learning/03-policy-gradients/)
+
+13. **[LLMs From Scratch](./13-llms-from-scratch/)**
+    - [Tokenizer From Scratch (BPE)](./13-llms-from-scratch/01-tokenizer-from-scratch/)
+    - [Pretraining Objective (Tiny GPT)](./13-llms-from-scratch/02-pretraining-objective/)
+    - [Instruction Tuning](./13-llms-from-scratch/03-instruction-tuning/)
+
+14. **[Multi-Agent Systems](./14-multi-agent-systems/)**
+    - [Agent Communication Protocols](./14-multi-agent-systems/01-communication-protocols/)
+    - [Orchestration Patterns](./14-multi-agent-systems/02-orchestration-patterns/)
+    - [Swarm Coordination (PSO)](./14-multi-agent-systems/03-swarm-coordination/)
+
+15. **[Agent Skills & MCP](./15-agent-skills-and-mcp/)**
+    - [Agent Skills & Progressive Disclosure](./15-agent-skills-and-mcp/01-agent-skills/)
+    - [Model Context Protocol (MCP)](./15-agent-skills-and-mcp/02-model-context-protocol/)
+    - [Skills+MCP Agent Loop](./15-agent-skills-and-mcp/03-skills-and-mcp-agent-loop/)
+
+**[Projects](./projects/)** 🔄 Growing — Beginner: Titanic EDA, Iris Classifier, House Prices, Student Performance (all with notebooks) — bigger projects: [ml-spi](https://github.com/yash27007/ml-spi)
 
 ---
 
