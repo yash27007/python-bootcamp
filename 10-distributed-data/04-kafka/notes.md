@@ -3,8 +3,8 @@
 > **Note on template substitution:** like `01-why-distributed-processing`, `02-pyspark-local-mode`,
 > and `03-streaming-fundamentals`, this is a systems/tooling topic, not a numerical-modeling one —
 > there is no loss function or derivative underlying "what is a replicated log" or "what is a
-> consumer-group rebalance." Per `docs/superpowers/plans/2026-08-24-phase5-distributed-data.md`'s
-> Global Constraints, the "Mathematical foundation" section below is replaced with a **Conceptual
+> consumer-group rebalance." Per `AGENTS.md`'s content standards,
+> the "Mathematical foundation" section below is replaced with a **Conceptual
 > foundation** section covering Kafka's log-based storage model, consumer groups and rebalancing,
 > and delivery semantics — this substitution is documented here inline, as required.
 

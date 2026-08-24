@@ -2,7 +2,7 @@
 
 > **Note on template substitution:** this topic is a distributed-systems topic, not a numerical-
 > modeling one — there is no closed-form loss function or derivative to derive. Per
-> `docs/superpowers/plans/2026-08-24-phase5-distributed-data.md`'s Global Constraints, the
+> `AGENTS.md`'s content standards, the
 > "Mathematical foundation" section below is replaced with a **Conceptual foundation** section
 > that plays the same structural role: it precisely defines the mechanisms (partitioning, the
 > map/filter/aggregate primitives, shuffle, fault tolerance) that the Algorithm and

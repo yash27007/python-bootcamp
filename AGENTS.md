@@ -1,6 +1,6 @@
 # AGENTS.md — Repository Constitution
 
-This file is the durable, binding statement of what this repository is and how work on it is done. Any agent (or human) making changes here should read this first. The full rationale lives in `docs/superpowers/specs/2026-08-23-first-principles-curriculum-design.md` — this file is the operating summary.
+This file is the durable, binding statement of what this repository is and how work on it is done. Any agent (or human) making changes here should read this first.
 
 ## What this repository is
 
@@ -90,7 +90,5 @@ Before any topic is marked complete:
 
 ## How work happens here
 
-- Design work uses `superpowers:brainstorming` (architectural changes get a written spec in `docs/superpowers/specs/`).
-- Implementation plans live in `docs/superpowers/plans/` and are executed via `superpowers:subagent-driven-development` — one plan per phase, tasks reviewed before being marked done.
 - Never a single giant destructive rewrite. Existing good notebooks/explanations are improved, not discarded.
 - Every new/modified notebook is executed end-to-end (`jupyter nbconvert --execute --inplace`) before being considered done — no notebook with unexecuted cells ships.

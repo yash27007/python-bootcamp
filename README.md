@@ -1,6 +1,6 @@
 # Zero to Hero: Python, Data Science, ML & AI
 
-A structured, hands-on course repository covering everything from Python basics to MLOps and LLM applications — following the [Complete Machine Learning, NLP Bootcamp (MLOps & Deployment)](https://www.udemy.com/course/complete-machine-learning-nlp-bootcamp-mlops-deployment/) curriculum, extended with GenAI and LLM application projects.
+A structured, hands-on, first-principles curriculum covering everything from Python basics through MLOps, PyTorch, generative AI, reinforcement learning, LLMs built from scratch, and multi-agent systems. Every topic follows the same chain: Problem → Intuition → Why simpler approaches fail → Math derived from scratch → Tiny working implementation → Real experiment → Failure modes → Production usage (see [AGENTS.md](./AGENTS.md) for the full standard).
 
 > A one-stop learning resource for ML, DS, and AI. If you find this helpful, please leave a ⭐
 

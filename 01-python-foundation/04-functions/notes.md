@@ -1,8 +1,7 @@
 # Functions — Reuse, Scope, Closures, Decorators
 
 > **Note on template substitution:** like `01-basics`, this is a software-engineering foundations
-> topic, not a numerical-modeling one. Per this section's plan
-> (`docs/superpowers/plans/2026-08-24-phase7-foundations-retrofit.md`, Global Constraints), the
+> topic, not a numerical-modeling one. Per `AGENTS.md`'s content standards, the
 > "Mathematical foundation" section below is replaced with a **Conceptual foundation** section —
 > Python's scope-resolution and closure mechanism — which plays the same structural role: it's the
 > precise mechanism the rest of this document's examples and demos rest on. Documented here inline,

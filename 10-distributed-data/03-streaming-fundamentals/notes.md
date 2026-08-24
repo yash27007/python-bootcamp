@@ -3,7 +3,7 @@
 > **Note on template substitution:** like `01-why-distributed-processing` and
 > `02-pyspark-local-mode`, this is a systems/tooling topic, not a numerical-modeling one — there is
 > no loss function or derivative underlying "what is a queue" or "what is a partition offset." Per
-> `docs/superpowers/plans/2026-08-24-phase5-distributed-data.md`'s Global Constraints, the
+> `AGENTS.md`'s content standards, the
 > "Mathematical foundation" section below is replaced with a **Conceptual foundation** section
 > covering producer/consumer decoupling, backpressure, stream partitioning, consumer groups, and
 > offsets — this substitution is documented here inline, as required.

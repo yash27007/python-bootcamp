@@ -3,7 +3,7 @@
 > **Note on template substitution:** like `01-why-distributed-processing`, this topic is a
 > tooling/systems topic, not a numerical-modeling one — there is no loss function or derivative to
 > derive for "what is a DataFrame API." Per
-> `docs/superpowers/plans/2026-08-24-phase5-distributed-data.md`'s Global Constraints, the
+> `AGENTS.md`'s content standards, the
 > "Mathematical foundation" section below is replaced with a **Conceptual foundation** section
 > covering Spark's DataFrame API and lazy execution model (transformations vs. actions, the
 > execution plan) — this substitution is documented here inline, as required.

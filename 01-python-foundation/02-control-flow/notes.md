@@ -2,8 +2,7 @@
 
 > **Note on template substitution:** this is a software-engineering foundations topic, not a
 > numerical-modeling one — there is no loss function or derivative to derive here. Per this
-> section's plan (`docs/superpowers/plans/2026-08-24-phase7-foundations-retrofit.md`, Global
-> Constraints), the "Mathematical foundation" section below is replaced with a **Conceptual
+> `AGENTS.md`'s content standards, the "Mathematical foundation" section below is replaced with a **Conceptual
 > foundation** section that plays the same structural role: it precisely defines the mechanisms
 > (truthiness, short-circuit evaluation) that the rest of this document's examples and the
 > from-scratch dispatch table rest on. This substitution is documented here inline, as required.
