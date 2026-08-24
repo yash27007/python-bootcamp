@@ -22,7 +22,7 @@ A structured, hands-on, first-principles curriculum covering everything from Pyt
 
 ## Curriculum
 
-Every topic below links directly to its folder (`README.md` + `notes.md` + notebook/script). All 15 sections are ✅ Complete.
+Every topic below links directly to its folder (`README.md` + `notes.md` + notebook/script). All 15 sections are  Complete.
 
 1. **[Python Foundation](./01-python-foundation/)**
    - [Basics](./01-python-foundation/01-basics/)
@@ -140,7 +140,7 @@ Every topic below links directly to its folder (`README.md` + `notes.md` + noteb
     - [Model Context Protocol (MCP)](./15-agent-skills-and-mcp/02-model-context-protocol/)
     - [Skills+MCP Agent Loop](./15-agent-skills-and-mcp/03-skills-and-mcp-agent-loop/)
 
-**[Projects](./projects/)** 🔄 Growing — Beginner: Titanic EDA, Iris Classifier, House Prices, Student Performance (all with notebooks) — bigger projects: [ml-spi](https://github.com/yash27007/ml-spi)
+**[Projects](./projects/)**  Growing — Beginner: Titanic EDA, Iris Classifier, House Prices, Student Performance (all with notebooks) — bigger projects: [ml-spi](https://github.com/yash27007/ml-spi)
 
 ---
 
