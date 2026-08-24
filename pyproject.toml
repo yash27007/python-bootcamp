@@ -23,6 +23,7 @@ dependencies = [
     "statsmodels>=0.14.6",
     "streamlit>=1.57.0",
     "tensorflow>=2.21.0",
+    "torch>=2.13.0",
     "wordcloud>=1.9.4",
     "xgboost>=3.2.0",
 ]
