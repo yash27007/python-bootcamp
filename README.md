@@ -37,7 +37,7 @@ A structured, hands-on course repository covering everything from Python basics 
 | [11](./11-generative-ai/) | **Generative AI** | ✅ Complete | GANs, Diffusion Models |
 | [12](./12-reinforcement-learning/) | **Reinforcement Learning** | ✅ Complete | MDPs & Bellman Equation, Q-Learning, Policy Gradients |
 | [13](./13-llms-from-scratch/) | **LLMs From Scratch** | ✅ Complete | Tokenizer (BPE) From Scratch, Pretraining Objective (Tiny GPT), Instruction Tuning |
-| [14](./14-multi-agent-systems/) | **Multi-Agent Systems** | 🚧 In progress | Communication protocols, orchestration, swarms |
+| [14](./14-multi-agent-systems/) | **Multi-Agent Systems** | ✅ Complete | Communication Protocols, Orchestration Patterns, Swarm Coordination (PSO) |
 | [15](./15-agent-skills-and-mcp/) | **Agent Skills & MCP** | 🚧 In progress | Agent Skills, Model Context Protocol |
 | [projects](./projects/) | **Projects** | 🔄 Growing | Beginner: Titanic EDA, Iris Classifier, House Prices, Student Performance (all with notebooks) — bigger projects: [ml-spi](https://github.com/yash27007/ml-spi) |
 
@@ -150,6 +150,9 @@ MDPs → Q-learning → policy gradients: the Bellman equation derived and solve
 
 ### 13 – LLMs From Scratch
 Tokenizer → pretraining objective → instruction tuning, first-principles: Byte-Pair Encoding derived and trained from scratch in plain Python with a real round-trip check, causal self-attention derived and a real 21k-parameter TinyGPT actually trained and sampled from (honestly nonsensical output, explained by capacity/data/steps and connected to Chinchilla/Kaplan scaling laws), then that same tiny model fine-tuned on hand-written (instruction, response) pairs with a real before/after comparison and an observed catastrophic-forgetting artifact.
+
+### 14 – Multi-Agent Systems
+Communication protocols → orchestration patterns → swarm coordination, in increasing decentralization: a from-scratch `Message`/`MessageBus` (direct/broadcast/blackboard) with a real scripted negotiation and measured message-count scaling, a manager/worker orchestrator built on top of it with real fan-out/fan-in vs. sequential comparisons and concrete worker-failure demos, then fully decentralized Particle Swarm Optimization derived from scratch in NumPy with a real convergence run and a real measured premature-convergence failure. No live external LLM API calls anywhere in this section — agents are deterministic, honestly-labeled stand-ins.
 
 ---
 
