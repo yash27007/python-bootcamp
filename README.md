@@ -70,13 +70,13 @@ Navigate to any section folder and open a `.ipynb` file.
 
 ```bash
 # Example: multi-threading demo
-python 01-python-foundation/04-multi-threading/multi-threading.py
+python 01-python-foundation/10-multithreading/multi-threading.py
 
 # Example: Flask API
-python 01-python-foundation/05-flask/app.py
+python 01-python-foundation/12-flask/app.py
 
 # Example: Streamlit app
-streamlit run 01-python-foundation/06-streamlit/main.py
+streamlit run 01-python-foundation/13-streamlit/main.py
 ```
 
 ---
@@ -107,7 +107,7 @@ The mathematical bedrock of ML:
 - **Probability** – rules, distributions, Bayes' theorem, CLT
 - **Inferential Statistics** – CIs, hypothesis testing, t-tests, ANOVA, chi-square
 
-### 03 – Data Analysis *(coming soon)*
+### 03 – Data Analysis
 NumPy, Pandas, data manipulation, reading from multiple sources, Matplotlib, Seaborn, SQLite, and three real-world EDA projects (Red Wine, Flight Price, Google Play Store).
 
 ### 04 – Feature Engineering
