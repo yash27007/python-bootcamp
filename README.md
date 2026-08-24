@@ -28,7 +28,7 @@ A structured, hands-on course repository covering everything from Python basics 
 | [04](./04-feature-engineering/) | **Feature Engineering** | ✅ Complete | Missing Values, Outliers, Encoding, Imbalanced Data |
 | [05](./05-machine-learning/) | **Machine Learning** | ✅ Complete | Linear→Polynomial Regression, Regularization, Logistic, SVM, Naive Bayes, KNN, Trees, Ensembles, Boosting, XGBoost, PCA, K-Means, Hierarchical, DBSCAN, Isolation Forest, LOF |
 | [06](./06-deep-learning/) | **Deep Learning** | ✅ Complete | ANN, CNN, RNN, LSTM/GRU, Attention & Transformers |
-| [07](./07-nlp/) | **NLP** | ✅ Complete | Text Preprocessing, BOW/TF-IDF, Word2Vec, Deep Learning NLP |
+| [07](./07-nlp/) | **NLP** | ✅ Complete | Text Preprocessing, BOW/TF-IDF, Word2Vec, Deep Learning NLP, Transformers & HuggingFace |
 | [08](./08-mlops-deployment/) | **MLOps & Deployment** | ✅ Complete | Docker, Git, Testing & CI, Model Packaging & Versioning, MLflow/DagsHub, DVC, BentoML, CI/CD, Monitoring |
 | [09](./09-pytorch/) | **PyTorch** | ✅ Complete | Tensors & Autograd, nn.Module & Training Loop, Datasets/DataLoaders & Checkpointing, GPU/Mixed Precision/Profiling |
 | [10](./10-distributed-data/) | **Distributed Data** | ✅ Complete | Why Distributed Processing, PySpark Local Mode, Streaming Fundamentals, Kafka |
@@ -124,7 +124,7 @@ Preparing raw data for ML models:
 ANN from scratch (activations, optimisers, dropout), CNN for images, RNN for sequences, LSTM/GRU for long-range dependencies, and the full Transformer architecture (self-attention through decoder).
 
 ### 07 – NLP
-Text preprocessing with NLTK, classical feature extraction (BOW, N-Grams, TF-IDF), dense word embeddings (Word2Vec, AvgWord2Vec), and deep learning-based NLP.
+Text preprocessing with NLTK, classical feature extraction (BOW, N-Grams, TF-IDF), dense word embeddings (Word2Vec, AvgWord2Vec), deep learning-based NLP, and Transformers/HuggingFace fine-tuning.
 
 ### 08 – MLOps & Deployment
 Docker and Git/GitHub fundamentals, testing & CI, model packaging & versioning, MLflow/DagsHub (with DVC) for experiment tracking, BentoML for serving models as APIs, CI/CD pipelines, and monitoring deployed models.

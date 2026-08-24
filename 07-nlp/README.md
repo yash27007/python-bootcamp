@@ -8,8 +8,9 @@ From raw text to word embeddings and deep learning-based NLP.
 | 02 | [Feature Extraction](./02-feature-extraction/) | ✅ Complete | OHE, BOW, N-Grams, TF-IDF |
 | 03 | [Word Embeddings](./03-word-embeddings/) | ✅ Complete | Word2Vec (CBOW & Skip-Gram), AvgWord2Vec, Gensim |
 | 04 | [Deep Learning for NLP](./04-deep-learning-nlp/) | ✅ Complete | Embedding layers, RNN/LSTM text classification |
+| 05 | [Transformers & HuggingFace](./05-transformers-and-huggingface/) | ✅ Complete | Subword tokenization, `pipeline()`, pretrained-model fine-tuning |
 
 ## Prerequisites
 
 - Section 05 (Machine Learning)
-- Section 06 (Deep Learning) — recommended for topic 04
+- Section 06 (Deep Learning) — recommended for topic 04; topic 05 (Attention & Transformers) is a direct prerequisite for topic 05 here
