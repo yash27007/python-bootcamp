@@ -13,7 +13,7 @@ A structured, hands-on course repository covering everything from Python basics 
        ↓
 04-feature-engineering  →  05-machine-learning  →  06-deep-learning
        ↓
-07-nlp  →  08-mlops-deployment  →  09-pytorch  →  projects (beginner)
+07-nlp  →  08-mlops-deployment  →  09-pytorch  →  10-distributed-data  →  projects (beginner)
 ```
 
 ---
@@ -31,6 +31,7 @@ A structured, hands-on course repository covering everything from Python basics 
 | [07](./07-nlp/) | **NLP** | ✅ Complete | Text Preprocessing, BOW/TF-IDF, Word2Vec, Deep Learning NLP |
 | [08](./08-mlops-deployment/) | **MLOps & Deployment** | ✅ Complete | Docker, Git, Testing & CI, Model Packaging & Versioning, MLflow/DagsHub, DVC, BentoML, CI/CD, Monitoring |
 | [09](./09-pytorch/) | **PyTorch** | ✅ Complete | Tensors & Autograd, nn.Module & Training Loop, Datasets/DataLoaders & Checkpointing, GPU/Mixed Precision/Profiling |
+| [10](./10-distributed-data/) | **Distributed Data** | ✅ Complete | Why Distributed Processing, PySpark Local Mode, Streaming Fundamentals, Kafka |
 | [projects](./projects/) | **Projects** | 🔄 Growing | Beginner: Titanic EDA, Iris Classifier, House Prices, Student Performance (all with notebooks) — bigger projects: [ml-spi](https://github.com/yash27007/ml-spi) |
 
 ---
@@ -130,6 +131,9 @@ Docker and Git/GitHub fundamentals, testing & CI, model packaging & versioning, 
 
 ### 09 – PyTorch
 First-principles PyTorch, each topic bridged from the from-scratch NumPy MLP in `06-deep-learning`: tensors and reverse-mode autograd, `nn.Module` and the standard training loop, `Dataset`/`DataLoader` pipelines with checkpointing (real crash-and-resume), and the hardware/systems side of training at scale — GPU parallelism, mixed precision, and profiling.
+
+### 10 – Distributed Data
+Why one machine stops being enough before any framework syntax: partitioning, shuffle, and fault tolerance (with a real timed single-thread vs. multiprocessing vs. PySpark comparison), real PySpark local-mode jobs, then the streaming equivalent — producer/consumer, backpressure, and partitioned logs — before Kafka (real reviewed code, honestly marked unexecuted since no broker is available in this environment).
 
 ---
 
