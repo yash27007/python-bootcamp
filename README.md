@@ -38,7 +38,7 @@ A structured, hands-on course repository covering everything from Python basics 
 | [12](./12-reinforcement-learning/) | **Reinforcement Learning** | ✅ Complete | MDPs & Bellman Equation, Q-Learning, Policy Gradients |
 | [13](./13-llms-from-scratch/) | **LLMs From Scratch** | ✅ Complete | Tokenizer (BPE) From Scratch, Pretraining Objective (Tiny GPT), Instruction Tuning |
 | [14](./14-multi-agent-systems/) | **Multi-Agent Systems** | ✅ Complete | Communication Protocols, Orchestration Patterns, Swarm Coordination (PSO) |
-| [15](./15-agent-skills-and-mcp/) | **Agent Skills & MCP** | 🚧 In progress | Agent Skills, Model Context Protocol |
+| [15](./15-agent-skills-and-mcp/) | **Agent Skills & MCP** | ✅ Complete | Agent Skills & Progressive Disclosure, Model Context Protocol, Skills+MCP Agent Loop |
 | [projects](./projects/) | **Projects** | 🔄 Growing | Beginner: Titanic EDA, Iris Classifier, House Prices, Student Performance (all with notebooks) — bigger projects: [ml-spi](https://github.com/yash27007/ml-spi) |
 
 ---
@@ -153,6 +153,9 @@ Tokenizer → pretraining objective → instruction tuning, first-principles: By
 
 ### 14 – Multi-Agent Systems
 Communication protocols → orchestration patterns → swarm coordination, in increasing decentralization: a from-scratch `Message`/`MessageBus` (direct/broadcast/blackboard) with a real scripted negotiation and measured message-count scaling, a manager/worker orchestrator built on top of it with real fan-out/fan-in vs. sequential comparisons and concrete worker-failure demos, then fully decentralized Particle Swarm Optimization derived from scratch in NumPy with a real convergence run and a real measured premature-convergence failure. No live external LLM API calls anywhere in this section — agents are deterministic, honestly-labeled stand-ins.
+
+### 15 – Agent Skills and MCP
+Knowledge disclosure → action standardization → the loop that ties them together: a real `Skill`/`SkillRegistry` with deterministic keyword-overlap selection and a measured progressive-disclosure context-savings experiment, a real MCP-shaped JSON-RPC 2.0 server/client over a genuine local subprocess-stdio boundary with real tool discovery/invocation and schema validation, then both reused verbatim in a real 4-stage agent loop with a measured skill-narrowed vs. consider-everything tool-selection experiment — the curriculum's capstone connection back to `14-multi-agent-systems`'s orchestration pattern. No live LLM or external service call anywhere in this section.
 
 ---
 
