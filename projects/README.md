@@ -19,9 +19,18 @@ Small end-to-end projects that apply the concepts taught in the earlier sections
 
 ## Larger / Production-Grade Projects
 
-Bigger, production-style ML projects (full pipelines, MLOps, deployment) live in a separate repo so this course stays focused on learning material rather than sprawling project code:
+Bigger, production-style ML projects (full pipelines, MLOps, deployment, streaming, edge
+inference) each get an index card here — problem, why it matters, which curriculum topics it
+applies, technologies, prerequisites, and a link to the actual implementation repo. **The
+implementations themselves live in their own repositories, not in this one** — this repo is the
+learning curriculum and knowledge base; the linked repos are the engineering projects.
 
-**→ [github.com/yash27007/ml-spi](https://github.com/yash27007/ml-spi)**
+| Project | Status | Domain |
+|---------|--------|--------|
+| [Student Performance Indicator](./spi.md) | ✅ Built | Regression + MLOps serving |
+| [Sentinel](./sentinel.md) | 🗓 Planned | Streaming anomaly detection |
+| [DemandPulse](./demandpulse.md) | 🗓 Planned | Time-series forecasting |
+| [EdgeSense](./edgesense.md) | 🗓 Planned | Edge/constrained-device inference |
 
 ---
 
