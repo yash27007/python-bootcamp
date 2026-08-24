@@ -13,7 +13,7 @@ A structured, hands-on course repository covering everything from Python basics 
        ↓
 04-feature-engineering  →  05-machine-learning  →  06-deep-learning
        ↓
-07-nlp  →  08-mlops-deployment  →  09-pytorch  →  10-distributed-data  →  projects (beginner)
+07-nlp  →  08-mlops-deployment  →  09-pytorch  →  10-distributed-data  →  11-generative-ai  →  projects (beginner)
 ```
 
 ---
@@ -32,6 +32,7 @@ A structured, hands-on course repository covering everything from Python basics 
 | [08](./08-mlops-deployment/) | **MLOps & Deployment** | ✅ Complete | Docker, Git, Testing & CI, Model Packaging & Versioning, MLflow/DagsHub, DVC, BentoML, CI/CD, Monitoring |
 | [09](./09-pytorch/) | **PyTorch** | ✅ Complete | Tensors & Autograd, nn.Module & Training Loop, Datasets/DataLoaders & Checkpointing, GPU/Mixed Precision/Profiling |
 | [10](./10-distributed-data/) | **Distributed Data** | ✅ Complete | Why Distributed Processing, PySpark Local Mode, Streaming Fundamentals, Kafka |
+| [11](./11-generative-ai/) | **Generative AI** | ✅ Complete | GANs, Diffusion Models |
 | [projects](./projects/) | **Projects** | 🔄 Growing | Beginner: Titanic EDA, Iris Classifier, House Prices, Student Performance (all with notebooks) — bigger projects: [ml-spi](https://github.com/yash27007/ml-spi) |
 
 ---
@@ -134,6 +135,9 @@ First-principles PyTorch, each topic bridged from the from-scratch NumPy MLP in 
 
 ### 10 – Distributed Data
 Why one machine stops being enough before any framework syntax: partitioning, shuffle, and fault tolerance (with a real timed single-thread vs. multiprocessing vs. PySpark comparison), real PySpark local-mode jobs, then the streaming equivalent — producer/consumer, backpressure, and partitioned logs — before Kafka (real reviewed code, honestly marked unexecuted since no broker is available in this environment).
+
+### 11 – Generative AI
+GANs and diffusion models, first-principles, at toy scale: the adversarial min-max objective derived and a real trained generator/discriminator with a reproduced mode-collapse failure, then diffusion's forward/reverse process derived and a real trained DDPM on the same toy dataset, with a measured too-few-vs-too-many-steps quality/speed tradeoff.
 
 ---
 
