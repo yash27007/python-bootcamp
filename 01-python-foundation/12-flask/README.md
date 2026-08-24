@@ -1,150 +1,50 @@
-# Flask Framework Guide
+# Flask
 
-## What is Flask?
+## What you'll learn
 
-Flask is a lightweight web framework for Python that makes it easy to build web applications. Think of it as a toolkit that helps you create websites and web services without having to write everything from scratch.
+How Flask turns Python logic into something reachable over HTTP by any client, any language, any
+machine — the request/response cycle, routing as a URL-pattern-to-function lookup table, and WSGI
+as the standard interface that lets a production server (Gunicorn) run the same app the dev server
+does.
 
-## Why Use Flask?
+## Why it matters
 
-- **Simple to Learn**: Flask has a minimal setup and is beginner-friendly
-- **Flexible**: You can build anything from simple websites to complex web applications
-- **Lightweight**: Doesn't come with unnecessary features, keeping your app fast
-- **Well-Documented**: Extensive documentation and community support
+A trained model, a business calculation, or any piece of Python logic is only usable by the exact
+process that has it loaded — unusable by another service, a mobile app, or a teammate on a
+different machine, until it's exposed over the network. Flask automates the boilerplate every HTTP
+endpoint needs (URL matching, request parsing, response formatting) so only the endpoint-specific
+logic needs to be written by hand.
 
-## Key Concepts
+## Prerequisites
 
-### Routes
-Routes are URL patterns that tell Flask what to do when someone visits a specific web address.
+- `08-mlops-deployment/06-bentoml` — the from-scratch stdlib `http.server` endpoint this topic's
+  from-scratch section cites directly; read its "From-scratch implementation" section first for the
+  fuller request/preprocess/predict/postprocess pipeline this topic's routing-only version builds
+  on.
+- `11-memory-management` — Flask's dev server is exactly the kind of long-running process where
+  memory leaks matter.
 
-```python
-@app.route('/')
-def home():
-    return "Hello, World!"
-```
+## What you'll build
 
-### Templates
-Templates are HTML files that can display dynamic content. Flask uses Jinja2 templating engine.
+- A hand-rolled URL router using only stdlib `http.server` — a `@route(pattern)` decorator, a plain
+  list of `(regex, handler)` tuples, and manual dispatch — actually run and hit with real `curl`
+  requests
+- The existing Flask apps (`app.py` template-rendering app, `rest.py` JSON REST API), actually run
+  as a local dev server and hit with real requests (`GET`/`POST`/`PUT`/`DELETE`, a redirect flow,
+  a 404 case) — including one genuine template-mismatch bug found by running it for real, not
+  silently patched
 
-### Request Handling
-Flask can handle different HTTP methods like GET (retrieving data) and POST (sending data).
+See [`notes.md`](notes.md) for the full write-up including all real captured output,
+[`raw_http_server.py`](raw_http_server.py) for the from-scratch router, and
+[`app.py`](app.py)/[`rest.py`](rest.py) for the practical Flask apps.
 
-## Jinja2 Templating Engine
+## Where it shows up in real systems
 
-### What is Jinja2?
+Small-to-medium APIs and internal tools; `08-mlops-deployment/06-bentoml` builds the ML-specific
+version of the same idea (a model behind an HTTP endpoint) using a framework purpose-built for model
+serving instead of Flask's general-purpose routing.
 
-Jinja2 is Flask's default templating engine that allows you to create dynamic HTML pages. Think of it as a way to mix Python code with HTML to create web pages that change based on data.
+## What's next
 
-### Key Features
-
-- **Variable Insertion**: Display Python variables in HTML using `{{ variable_name }}`
-- **Control Structures**: Use loops and conditions with `{% for %}` and `{% if %}`
-- **Template Inheritance**: Create base templates that other templates can extend
-- **Filters**: Modify variables before displaying them (e.g., `{{ name|upper }}`)
-
-### Basic Syntax
-
-```html
-<!-- Variables -->
-<h1>Hello, {{ username }}!</h1>
-
-<!-- Loops -->
-{% for item in items %}
-    <li>{{ item }}</li>
-{% endfor %}
-
-<!-- Conditionals -->
-{% if user.is_authenticated %}
-    <p>Welcome back!</p>
-{% else %}
-    <p>Please log in</p>
-{% endif %}
-```
-
-### Template Inheritance
-
-Create a base template (`base.html`):
-```html
-<!DOCTYPE html>
-<html>
-<head>
-    <title>{% block title %}{% endblock %}</title>
-</head>
-<body>
-    {% block content %}{% endblock %}
-</body>
-</html>
-```
-
-Extend it in other templates:
-```html
-{% extends "base.html" %}
-{% block title %}Home Page{% endblock %}
-{% block content %}
-    <h1>Welcome to my site!</h1>
-{% endblock %}
-```
-
-## Basic Flask App Structure
-
-```
-flask-app/
-├── app.py          # Main application file
-├── templates/      # HTML templates
-├── static/         # CSS, JS, images
-└── requirements.txt # Dependencies
-```
-
-## Getting Started
-
-1. Install Flask: `uv add flask`
-2. Create a simple app in `app.py`
-3. Run with: `uv run app.py`
-## WSGI (Web Server Gateway Interface)
-
-### What is WSGI?
-
-WSGI is a specification that defines how web servers communicate with web applications in Python. It acts as a bridge between your Flask application and the web server, ensuring they can work together regardless of which server you choose.
-
-### Why WSGI Matters
-
-- **Standardization**: Provides a common interface between web servers and Python web applications
-- **Portability**: Your Flask app can run on any WSGI-compatible server
-- **Scalability**: Enables deployment on production servers like Gunicorn, uWSGI, or mod_wsgi
-
-### WSGI Flow Diagram
-
-```
-Client Request → Web Server → WSGI Server → Flask App → Response
-    ↑                                                      ↓
-    └──────────────── Response Path ←←←←←←←←←←←←←←←←←←←←←←←←←┘
-
-┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-│   Browser   │───▶│ Web Server  │───▶│WSGI Gateway │───▶│ Flask App   │
-│             │    │ (Nginx/     │    │ (Gunicorn/  │    │             │
-│             │    │ Apache)     │    │ uWSGI)      │    │             │
-└─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘
-```
-
-### WSGI in Practice
-
-Flask has a built-in WSGI server for development:
-```python
-if __name__ == '__main__':
-    app.run()  # Uses built-in WSGI server
-```
-
-For production, you'd use a dedicated WSGI server:
-```bash
-# Using Gunicorn
-gunicorn -w 4 app:app
-
-# Using uWSGI
-uwsgi --http :8000 --wsgi-file app.py --callable app
-```
-
-### Common WSGI Servers
-
-- **Gunicorn**: Popular, easy to configure
-- **uWSGI**: Feature-rich, high performance
-- **mod_wsgi**: For Apache integration
-- **Waitress**: Pure Python, cross-platform
+`13-streamlit` — a different way to expose Python logic interactively, this time as a UI rather than
+an HTTP API — and this section's last topic.
