@@ -228,5 +228,6 @@ mlflow.db
 .mini-git/
 .build_cache/
 08-mlops-deployment/04-model-packaging-versioning/registry/
+09-pytorch/03-datasets-dataloaders-checkpointing/checkpoints/
 
 .pytest_cache/

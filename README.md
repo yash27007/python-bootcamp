@@ -13,7 +13,7 @@ A structured, hands-on course repository covering everything from Python basics 
        ↓
 04-feature-engineering  →  05-machine-learning  →  06-deep-learning
        ↓
-07-nlp  →  08-mlops-deployment  →  projects (beginner)
+07-nlp  →  08-mlops-deployment  →  09-pytorch  →  projects (beginner)
 ```
 
 ---
@@ -30,6 +30,7 @@ A structured, hands-on course repository covering everything from Python basics 
 | [06](./06-deep-learning/) | **Deep Learning** | ✅ Complete | ANN, CNN, RNN, LSTM/GRU, Attention & Transformers |
 | [07](./07-nlp/) | **NLP** | ✅ Complete | Text Preprocessing, BOW/TF-IDF, Word2Vec, Deep Learning NLP |
 | [08](./08-mlops-deployment/) | **MLOps & Deployment** | ✅ Complete | Docker, Git, Testing & CI, Model Packaging & Versioning, MLflow/DagsHub, DVC, BentoML, CI/CD, Monitoring |
+| [09](./09-pytorch/) | **PyTorch** | ✅ Complete | Tensors & Autograd, nn.Module & Training Loop, Datasets/DataLoaders & Checkpointing, GPU/Mixed Precision/Profiling |
 | [projects](./projects/) | **Projects** | 🔄 Growing | Beginner: Titanic EDA, Iris Classifier, House Prices, Student Performance (all with notebooks) — bigger projects: [ml-spi](https://github.com/yash27007/ml-spi) |
 
 ---
@@ -126,6 +127,9 @@ Text preprocessing with NLTK, classical feature extraction (BOW, N-Grams, TF-IDF
 
 ### 08 – MLOps & Deployment
 Docker and Git/GitHub fundamentals, testing & CI, model packaging & versioning, MLflow/DagsHub (with DVC) for experiment tracking, BentoML for serving models as APIs, CI/CD pipelines, and monitoring deployed models.
+
+### 09 – PyTorch
+First-principles PyTorch, each topic bridged from the from-scratch NumPy MLP in `06-deep-learning`: tensors and reverse-mode autograd, `nn.Module` and the standard training loop, `Dataset`/`DataLoader` pipelines with checkpointing (real crash-and-resume), and the hardware/systems side of training at scale — GPU parallelism, mixed precision, and profiling.
 
 ---
 
