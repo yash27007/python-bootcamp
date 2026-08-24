@@ -35,7 +35,7 @@ Every later topic in this section assumes an application can be reliably reprodu
 
 - Containerized training jobs, where the exact library/CUDA versions used to produce a model matter for reproducing results later.
 - Containerized model-serving endpoints — this topic's `app.py` + `Dockerfile` is the minimal version of a pattern used at production scale.
-- CI/CD pipelines (`08-mlops-deployment/07-cicd`, planned) that build and test inside containers so tests run in the same environment code will actually ship in.
+- CI/CD pipelines (`08-mlops-deployment/07-cicd`) that build and test inside containers so tests run in the same environment code will actually ship in.
 
 ## What's next
 

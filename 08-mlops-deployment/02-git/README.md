@@ -28,7 +28,7 @@ Every topic in this course, and every real ML codebase, lives in Git. Understand
 ## Where it appears in real systems
 
 - Every collaborative codebase, including this one.
-- CI/CD pipelines (`08-mlops-deployment/07-cicd`, planned) trigger directly off Git events (a push, a pull request).
+- CI/CD pipelines (`08-mlops-deployment/07-cicd`) trigger directly off Git events (a push, a pull request).
 - Model/data versioning tools (`08-mlops-deployment/04-model-packaging-versioning`) extend the same content-addressing idea to large binary artifacts that don't belong directly in a Git repository.
 
 ## What's next

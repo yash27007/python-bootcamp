@@ -51,7 +51,7 @@ someone remembers to manually re-check the results. Tests are what turn
 
 ## Where it appears in real systems
 
-- CI pipelines (`08-mlops-deployment/07-cicd`, planned) run exactly this
+- CI pipelines (`08-mlops-deployment/07-cicd`) run exactly this
   kind of suite automatically on every pull request and block merging on
   failure — this topic builds the tests; that one builds the automation
   around them.

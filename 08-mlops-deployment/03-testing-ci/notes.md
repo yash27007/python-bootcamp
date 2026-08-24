@@ -10,7 +10,10 @@ train/test split, a metric computed on the wrong column. The question this
 topic answers is mechanical and unglamorous but load-bearing: **how do you
 know a change to a training pipeline or model didn't break something,
 before you ship it** — not after a stakeholder notices predictions look
-wrong in production?
+wrong in production? `02-git` solved "what changed and who changed it,"
+but a diff only shows you the change — it says nothing about whether the
+pipeline still behaves correctly after that change. That's a different
+problem, and it's the one this topic answers.
 
 ## Intuition
 

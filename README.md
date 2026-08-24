@@ -29,7 +29,7 @@ A structured, hands-on course repository covering everything from Python basics 
 | [05](./05-machine-learning/) | **Machine Learning** | ✅ Complete | Linear→Polynomial Regression, Regularization, Logistic, SVM, Naive Bayes, KNN, Trees, Ensembles, Boosting, XGBoost, PCA, K-Means, Hierarchical, DBSCAN, Isolation Forest, LOF |
 | [06](./06-deep-learning/) | **Deep Learning** | ✅ Complete | ANN, CNN, RNN, LSTM/GRU, Attention & Transformers |
 | [07](./07-nlp/) | **NLP** | ✅ Complete | Text Preprocessing, BOW/TF-IDF, Word2Vec, Deep Learning NLP |
-| [08](./08-mlops-deployment/) | **MLOps & Deployment** | ✅ Complete | Docker, Git, End-to-End Projects, MLflow/DVC, BentoML |
+| [08](./08-mlops-deployment/) | **MLOps & Deployment** | ✅ Complete | Docker, Git, Testing & CI, Model Packaging & Versioning, MLflow/DagsHub, DVC, BentoML, CI/CD, Monitoring |
 | [projects](./projects/) | **Projects** | 🔄 Growing | Beginner: Titanic EDA, Iris Classifier, House Prices, Student Performance (all with notebooks) — bigger projects: [ml-spi](https://github.com/yash27007/ml-spi) |
 
 ---
@@ -125,7 +125,7 @@ ANN from scratch (activations, optimisers, dropout), CNN for images, RNN for seq
 Text preprocessing with NLTK, classical feature extraction (BOW, N-Grams, TF-IDF), dense word embeddings (Word2Vec, AvgWord2Vec), and deep learning-based NLP.
 
 ### 08 – MLOps & Deployment
-Docker, Git/GitHub, MLflow/DagsHub for experiment tracking, and BentoML for serving models as APIs.
+Docker and Git/GitHub fundamentals, testing & CI, model packaging & versioning, MLflow/DagsHub (with DVC) for experiment tracking, BentoML for serving models as APIs, CI/CD pipelines, and monitoring deployed models.
 
 ---
 

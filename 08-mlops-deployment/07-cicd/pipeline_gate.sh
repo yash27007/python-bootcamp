@@ -13,7 +13,7 @@
 
 set -uo pipefail
 
-PYTEST="/home/yashwanth-aravind/ml-course/python-bootcamp/.venv/bin/pytest"
+PYTEST="$(git rev-parse --show-toplevel)/.venv/bin/pytest"
 TARGET_DIR="${1:?usage: pipeline_gate.sh <path-to-pipeline-dir>}"
 
 echo "=================================================================="

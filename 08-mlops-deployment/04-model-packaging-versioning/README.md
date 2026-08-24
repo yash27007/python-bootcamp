@@ -51,15 +51,19 @@ Model Registry (`05-mlflow-dagshub`) automates it.
   distinct hashes, log correctly distinguishing them, integrity-verified
   reload) captured in `notes.md`.
 
+The `registry/` directory `register()` writes into is gitignored, not
+committed — run `.venv/bin/python train_and_register.py` to regenerate it
+locally; the real output from that run is already captured in `notes.md`.
+
 ## Where it appears in real systems
 
 - Any production system that retrains models needs a reliable answer to
   "which artifact is currently serving, and can I reproduce it" — this is
   the mechanism, at small scale, that answers that.
-- `05-mlflow-dagshub` (planned) builds the production-grade version of this
+- `05-mlflow-dagshub` builds the production-grade version of this
   exact idea: MLflow's Model Registry, with stage transitions and full
   run/data lineage.
-- `07-cicd` (planned) pipelines naturally register a model automatically
+- `07-cicd` pipelines naturally register a model automatically
   once it passes the test suite from `03-testing-ci`, tying a registry
   entry to the commit and test results that produced it.
 
