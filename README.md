@@ -13,7 +13,9 @@ A structured, hands-on course repository covering everything from Python basics 
        ↓
 04-feature-engineering  →  05-machine-learning  →  06-deep-learning
        ↓
-07-nlp  →  08-mlops-deployment  →  09-pytorch  →  10-distributed-data  →  11-generative-ai  →  12-reinforcement-learning  →  projects (beginner)
+07-nlp  →  08-mlops-deployment  →  09-pytorch  →  10-distributed-data  →  11-generative-ai  →  12-reinforcement-learning
+       ↓
+13-llms-from-scratch  →  14-multi-agent-systems  →  15-agent-skills-and-mcp  →  projects (beginner)
 ```
 
 ---
@@ -34,6 +36,9 @@ A structured, hands-on course repository covering everything from Python basics 
 | [10](./10-distributed-data/) | **Distributed Data** | ✅ Complete | Why Distributed Processing, PySpark Local Mode, Streaming Fundamentals, Kafka |
 | [11](./11-generative-ai/) | **Generative AI** | ✅ Complete | GANs, Diffusion Models |
 | [12](./12-reinforcement-learning/) | **Reinforcement Learning** | ✅ Complete | MDPs & Bellman Equation, Q-Learning, Policy Gradients |
+| [13](./13-llms-from-scratch/) | **LLMs From Scratch** | ✅ Complete | Tokenizer (BPE) From Scratch, Pretraining Objective (Tiny GPT), Instruction Tuning |
+| [14](./14-multi-agent-systems/) | **Multi-Agent Systems** | 🚧 In progress | Communication protocols, orchestration, swarms |
+| [15](./15-agent-skills-and-mcp/) | **Agent Skills & MCP** | 🚧 In progress | Agent Skills, Model Context Protocol |
 | [projects](./projects/) | **Projects** | 🔄 Growing | Beginner: Titanic EDA, Iris Classifier, House Prices, Student Performance (all with notebooks) — bigger projects: [ml-spi](https://github.com/yash27007/ml-spi) |
 
 ---
@@ -142,6 +147,9 @@ GANs and diffusion models, first-principles, at toy scale: the adversarial min-m
 
 ### 12 – Reinforcement Learning
 MDPs → Q-learning → policy gradients: the Bellman equation derived and solved by value iteration on a real stochastic grid-world, model-free Q-learning on the same grid with a real measured 85.71% policy match against value iteration, then REINFORCE derived and trained on a continuous-state environment a Q-table can't represent.
+
+### 13 – LLMs From Scratch
+Tokenizer → pretraining objective → instruction tuning, first-principles: Byte-Pair Encoding derived and trained from scratch in plain Python with a real round-trip check, causal self-attention derived and a real 21k-parameter TinyGPT actually trained and sampled from (honestly nonsensical output, explained by capacity/data/steps and connected to Chinchilla/Kaplan scaling laws), then that same tiny model fine-tuned on hand-written (instruction, response) pairs with a real before/after comparison and an observed catastrophic-forgetting artifact.
 
 ---
 
