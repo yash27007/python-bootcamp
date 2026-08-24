@@ -1,129 +1,46 @@
-### Theory
+# Multithreading
 
-### 1. Program
-A **program** is a set of instructions written in a programming language that tells a computer what to do. Think of it as a recipe: it lists the steps needed to complete a task, but by itself, it doesn't do anything until you actually start it. 
+## What you'll learn
 
-**Examples of programs:**
-- Web browsers (Chrome, Firefox)
-- Games (Minecraft, Solitaire)
-- Text editors (Notepad, VS Code)
-- Calculators
+How to do multiple things "at once" from one Python program using threads, why the Global
+Interpreter Lock (GIL) means that only helps for I/O-bound work, and why sharing mutable state
+across threads without a lock is a real, reproducible correctness bug — not a theoretical one.
 
-### 2. Process
+## Why it matters
 
-A **process** is what you get when a program is running (i.e., an instance of a program being executed). When you open a program, the computer loads it into memory and starts executing its instructions. Each process is independent and has its own memory and resources.
+Programs that wait on I/O (network requests, disk reads) waste real time if they wait
+sequentially. Threading reclaims that time by overlapping the *waiting* — but the same threads
+that make this possible can also silently corrupt shared state if two of them touch it at the same
+time without coordination. Recognizing and fixing that failure mode is one of the most important
+correctness skills in concurrent programming.
 
-**Example:** If you open two web browsers, each one runs as a separate process with its own memory space.
+## Prerequisites
 
-**Resources required by a process:**
+- `06-file-exception` (context managers — `with lock:` guarantees release exactly like `with
+  open(...)` guarantees a file gets closed)
+- `11-memory-management` (reference counting — the reason the GIL exists in the first place)
 
-| Resource | Description |
-|----------|-------------|
-| Code Segment | Contains the executable instructions of the program |
-| Data Segment | Stores global and static variables |
-| Heap | Dynamic memory allocation area |
-| Stack | Stores local variables and function call information |
-| Registers | CPU storage locations for immediate data access |
+## What you'll build
 
-### 3. Threads
+- A real, observed, non-deterministic race condition — a shared counter corrupted by unsynchronized
+  threads, actually run and captured — fixed with `threading.Lock` to show it's now always correct
+- A real deadlock (two locks acquired in opposite orders) and its fix (a single global acquisition
+  order)
 
-A **thread** is a smaller unit of a process (i.e., it's a unit of execution within a process). A process can have one or more threads, and each thread can run parts of the program simultaneously. Threads share the same memory within a process, which makes it easier for them to communicate with each other.
+See [`notes.md`](notes.md) for the full write-up including the real race-condition output,
+[`race-condition-demo.py`](race-condition-demo.py) and [`deadlock_demo.py`](deadlock_demo.py) for
+the from-scratch demos, and the existing `.py` files (`multi-threading.py`,
+`multi-processing.py`, `advanced-multi-threading.py`, `advanced-multi-processing.py`,
+`usecase-multi-threading.py`, `usecase-multi-processing.py`) for the practical I/O-bound and
+CPU-bound patterns.
 
-**Example:** In a web browser:
-- One thread might handle loading a web page
-- Another thread keeps the user interface responsive
-- A third thread might handle downloads
+## Where it shows up in real systems
 
-**Another example:** You open MS Paint (this is a process):
-- You can create a thread to draw a box
-- You can create another thread to draw a circle
-- Both threads use the resources allocated for the MS Paint process
+Web servers handling concurrent requests, producer-consumer pipelines, database connection pools,
+and `08-mlops-deployment`'s serving layers all depend on getting this right — and on avoiding the
+exact race-condition and deadlock failure modes demonstrated in this topic.
 
-**Key difference:** Processes are isolated from each other, while threads within the same process share memory and resources.
+## What's next
 
----
-
-## Python Multithreading
-
-Python provides the `threading` module to create and manage threads. Multithreading is useful for I/O-bound tasks (like downloading files, reading/writing to disk, or network operations) but is less effective for CPU-bound tasks due to the Global Interpreter Lock (GIL).
-
-### When to Use Multithreading
-- When you need to perform multiple I/O operations concurrently (e.g., web scraping, file downloads)
-- When you want to keep a user interface responsive while doing background work
-
-### Basic Example: Creating Threads
-
-```python
-import threading
-import time
-
-def print_numbers():
-	for i in range(5):
-		print(f"Number: {i}")
-		time.sleep(1)
-
-def print_letters():
-	for letter in 'abcde':
-		print(f"Letter: {letter}")
-		time.sleep(1)
-
-# Create threads
-t1 = threading.Thread(target=print_numbers)
-t2 = threading.Thread(target=print_letters)
-
-# Start threads
-t1.start()
-t2.start()
-
-# Wait for both threads to finish
-t1.join()
-t2.join()
-print("Done!")
-```
-
-**Output:**
-```
-Number: 0
-Letter: a
-Number: 1
-Letter: b
-...
-Done!
-```
-
-### Example: Downloading Multiple URLs Concurrently
-
-```python
-import threading
-import requests
-
-def download_url(url):
-	resp = requests.get(url)
-	print(f"Downloaded {url}: {len(resp.content)} bytes")
-
-urls = [
-	'https://www.example.com',
-	'https://www.python.org',
-	'https://www.github.com',
-]
-
-threads = []
-for url in urls:
-	t = threading.Thread(target=download_url, args=(url,))
-	t.start()
-	threads.append(t)
-
-for t in threads:
-	t.join()
-print("All downloads complete.")
-```
-
-### Best Practices
-- Use `threading.Thread` for I/O-bound tasks.
-- Use `threading.Lock` to prevent race conditions when threads share data.
-- For CPU-bound tasks, consider using `multiprocessing` instead.
-- Always call `join()` on threads to ensure they finish before your program exits.
-
-### Resources
-- [Python threading documentation](https://docs.python.org/3/library/threading.html)
-- [Real Python: Threading in Python](https://realpython.com/intro-to-python-threading/)
+`11-memory-management` — how Python actually manages the memory threads are sharing: reference
+counting, and why cyclic references need a separate garbage collector.
